@@ -31,7 +31,7 @@ const MockTestSchema = new mongoose.Schema({
                 id: String,
                 type: {
                     type: String,
-                    enum: ['MCQ', 'GapFill', 'TrueFalse', 'Matching', 'ShortAnswer'],
+                    enum: ['MCQ', 'GapFill', 'TrueFalse', 'Matching', 'ShortAnswer', 'MultipleAnswer'],
                 },
                 text: String,
                 options: [String],

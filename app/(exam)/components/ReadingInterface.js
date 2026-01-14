@@ -7,6 +7,7 @@ import ContextMenu from './ContextMenu';
 import NoteModal from './NoteModal';
 import NoteMarginIcon from './NoteMarginIcon';
 import MatchingQuestion from './MatchingQuestion';
+import MultipleAnswerMCQ from './MultipleAnswerMCQ';
 
 // Sample IELTS Reading Passage
 const READING_PASSAGE = `
@@ -93,6 +94,41 @@ const MATCHING_QUESTIONS = {
         'Introduction',
     ],
 };
+
+// Sample Multiple Answer questions for IELTS Reading
+const MULTIPLE_ANSWER_QUESTIONS = [
+    {
+        id: 'ma-1',
+        type: 'MultipleAnswer',
+        instruction: 'Choose TWO letters, A-E.',
+        text: 'Which TWO of the following are mentioned as threats to monarch butterflies?',
+        options: [
+            { id: 'A', text: 'Predation by birds during migration' },
+            { id: 'B', text: 'Loss of milkweed habitat' },
+            { id: 'C', text: 'Competition from other butterfly species' },
+            { id: 'D', text: 'Climate change and extreme weather' },
+            { id: 'E', text: 'Pollution in breeding grounds' },
+        ],
+        requiredCount: 2,
+        correctAnswers: ['B', 'D'],
+    },
+    {
+        id: 'ma-2',
+        type: 'MultipleAnswer',
+        instruction: 'Choose THREE letters, A-F.',
+        text: 'Which THREE conservation efforts for monarchs are mentioned in the passage?',
+        options: [
+            { id: 'A', text: 'Captive breeding programs' },
+            { id: 'B', text: 'Restoring milkweed habitat' },
+            { id: 'C', text: 'Banning pesticide use entirely' },
+            { id: 'D', text: 'Educational programs and awareness' },
+            { id: 'E', text: 'Citizen science monitoring projects' },
+            { id: 'F', text: 'Relocating butterflies to new regions' },
+        ],
+        requiredCount: 3,
+        correctAnswers: ['B', 'D', 'E'],
+    },
+];
 
 export default function ReadingInterface() {
     const {
@@ -497,6 +533,36 @@ export default function ReadingInterface() {
                         answers={answers}
                         onAnswerChange={handleAnswerChange}
                     />
+                </div>
+
+                {/* Multiple Answer Questions Section */}
+                <div className="mt-10 pt-6 border-t-2 border-gray-300">
+                    <div className="mb-6 pb-4 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800">Questions 19-20</h2>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Choose the correct letters from the options given.
+                        </p>
+                        <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-4">
+                            <p className="text-sm text-purple-800 font-medium mb-2">Instructions:</p>
+                            <ul className="text-sm text-purple-700 space-y-1">
+                                <li>Read each question carefully</li>
+                                <li>Select the <strong>exact number</strong> of answers specified</li>
+                                <li>You cannot select more than the required number</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        {MULTIPLE_ANSWER_QUESTIONS.map((question, index) => (
+                            <MultipleAnswerMCQ
+                                key={question.id}
+                                questionGroup={question}
+                                questionNumber={19 + index}
+                                answers={answers}
+                                onAnswerChange={handleAnswerChange}
+                            />
+                        ))}
+                    </div>
                 </div>
 
                 {/* Bottom spacing */}
