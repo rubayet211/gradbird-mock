@@ -8,6 +8,7 @@ import NoteModal from './NoteModal';
 import NoteMarginIcon from './NoteMarginIcon';
 import MatchingQuestion from './MatchingQuestion';
 import MultipleAnswerMCQ from './MultipleAnswerMCQ';
+import GapFillQuestion from './GapFillQuestion';
 
 // Sample IELTS Reading Passage
 const READING_PASSAGE = `
@@ -127,6 +128,42 @@ const MULTIPLE_ANSWER_QUESTIONS = [
         ],
         requiredCount: 3,
         correctAnswers: ['B', 'D', 'E'],
+    },
+];
+
+// Sample Gap Fill questions for IELTS Reading
+const GAP_FILL_QUESTIONS = [
+    {
+        id: 'gf-1',
+        type: 'GapFill',
+        instruction: 'Complete the sentences below. Write NO MORE THAN TWO WORDS for each answer.',
+        questions: [
+            {
+                id: 'gf-1-q1',
+                text: 'Monarch butterflies travel up to ____ miles during migration.',
+                wordLimit: 2,
+            },
+            {
+                id: 'gf-1-q2',
+                text: 'The butterflies use their ____ to detect the Earth\'s magnetic field.',
+                wordLimit: 2,
+            },
+            {
+                id: 'gf-1-q3',
+                text: 'Milkweed is the ____ food source for monarch caterpillars.',
+                wordLimit: 2,
+            },
+            {
+                id: 'gf-1-q4',
+                text: 'Scientists estimate a population decline of approximately ____ since the mid-1990s.',
+                wordLimit: 2,
+            },
+            {
+                id: 'gf-1-q5',
+                text: 'Illegal logging reduces the available habitat despite the establishment of ____ by the Mexican government.',
+                wordLimit: 2,
+            },
+        ],
     },
 ];
 
@@ -558,6 +595,28 @@ export default function ReadingInterface() {
                                 key={question.id}
                                 questionGroup={question}
                                 questionNumber={19 + index}
+                                answers={answers}
+                                onAnswerChange={handleAnswerChange}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Gap Fill Questions Section */}
+                <div className="mt-10 pt-6 border-t-2 border-gray-300">
+                    <div className="mb-6 pb-4 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800">Questions 21-25</h2>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Complete the sentences below.
+                        </p>
+                    </div>
+
+                    <div className="space-y-6">
+                        {GAP_FILL_QUESTIONS.map((group, index) => (
+                            <GapFillQuestion
+                                key={group.id}
+                                questionGroup={group}
+                                startNumber={21}
                                 answers={answers}
                                 onAnswerChange={handleAnswerChange}
                             />
