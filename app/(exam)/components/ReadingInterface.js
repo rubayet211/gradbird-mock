@@ -9,6 +9,7 @@ import NoteMarginIcon from './NoteMarginIcon';
 import MatchingQuestion from './MatchingQuestion';
 import MultipleAnswerMCQ from './MultipleAnswerMCQ';
 import GapFillQuestion from './GapFillQuestion';
+import DiagramLabeling from './DiagramLabeling';
 
 // Sample IELTS Reading Passage
 const READING_PASSAGE = `
@@ -166,6 +167,20 @@ const GAP_FILL_QUESTIONS = [
         ],
     },
 ];
+
+// Sample Diagram Labeling questions for IELTS Reading
+const DIAGRAM_LABELING_QUESTIONS = {
+    id: 'dl-1',
+    type: 'DiagramLabeling',
+    instruction: 'Write NO MORE THAN TWO WORDS for each answer.',
+    imageUrl: 'https://cdn.britannica.com/39/150539-050-7119F9CC/parts-flower.jpg', // Placeholder flower diagram
+    questions: [
+        { id: 'dl-1-q1', x: 20, y: 30, label: 'Part A' },
+        { id: 'dl-1-q2', x: 75, y: 25, label: 'Part B' },
+        { id: 'dl-1-q3', x: 50, y: 60, label: 'Part C' },
+        { id: 'dl-1-q4', x: 30, y: 80, label: 'Part D' },
+    ]
+};
 
 export default function ReadingInterface() {
     const {
@@ -622,6 +637,23 @@ export default function ReadingInterface() {
                             />
                         ))}
                     </div>
+                </div>
+
+                {/* Diagram Labeling Questions Section */}
+                <div className="mt-10 pt-6 border-t-2 border-gray-300">
+                    <div className="mb-6 pb-4 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800">Questions 26-29</h2>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Label the parts of the flower.
+                        </p>
+                    </div>
+
+                    <DiagramLabeling
+                        questionGroup={DIAGRAM_LABELING_QUESTIONS}
+                        startNumber={26}
+                        answers={answers}
+                        onAnswerChange={handleAnswerChange}
+                    />
                 </div>
 
                 {/* Bottom spacing */}
