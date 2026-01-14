@@ -7,7 +7,7 @@ import NotesPanel from './NotesPanel';
 import SettingsMenu from './SettingsMenu';
 
 export default function ExamHeader() {
-    const { timeLeft, notes, toggleHideScreen, isHidden, toggleFontSize, fontSize } = useExam();
+    const { timeLeft, notes, toggleHideScreen, isHidden } = useExam();
     const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
 
     return (
@@ -63,14 +63,7 @@ export default function ExamHeader() {
                         </span>
                     </div>
 
-                    {/* Font Size Toggle Button */}
-                    <button
-                        className="flex items-center justify-center w-10 h-10 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-white font-serif font-bold text-xl"
-                        onClick={toggleFontSize}
-                        title={`Font Size: ${fontSize.charAt(0).toUpperCase() + fontSize.slice(1)}`}
-                    >
-                        A
-                    </button>
+
 
                     {/* Settings Menu */}
                     <SettingsMenu />

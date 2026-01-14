@@ -303,6 +303,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         // Font Size
         fontSize,
         toggleFontSize,
+        setFontSize,
     };
 
     return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;
