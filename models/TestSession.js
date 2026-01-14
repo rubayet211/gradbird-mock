@@ -32,7 +32,11 @@ const TestSessionSchema = new mongoose.Schema({
         reading: { type: Number },
         listening: { type: Number },
         writing: { type: Number },
+        speaking: { type: Number },
         overall: { type: Number },
+    },
+    feedback: {
+        type: String,
     },
 });
 
