@@ -16,7 +16,10 @@ export default function ResizableSplitPane({
     // Use the hook for localStorage persistence
     const { defaultLayout, onLayoutChanged } = useDefaultLayout({
         id: storageKey,
-        storage: typeof window !== 'undefined' ? localStorage : undefined,
+        storage:
+            typeof window !== 'undefined' && 'localStorage' in window
+                ? window.localStorage
+                : undefined,
     });
 
     return (
