@@ -28,6 +28,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
     const [answers, setAnswers] = useState({});
     const [questionStatus, setQuestionStatus] = useState(generateInitialQuestionStatus);
     const [isTimerRunning, setIsTimerRunning] = useState(true);
+    const [isReviewOpen, setIsReviewOpen] = useState(false);
 
     // Highlight and note state
     const [highlights, setHighlights] = useState([]);
@@ -158,6 +159,10 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         setIsTimerRunning((prev) => !prev);
     }, []);
 
+    const toggleReviewScreen = useCallback(() => {
+        setIsReviewOpen((prev) => !prev);
+    }, []);
+
     const value = {
         timeLeft,
         currentQuestionIndex,
@@ -171,6 +176,9 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         setAnswer,
         toggleFlag,
         toggleTimer,
+        isReviewOpen,
+        setIsReviewOpen,
+        toggleReviewScreen,
         // Highlight and note management
         highlights,
         notes,

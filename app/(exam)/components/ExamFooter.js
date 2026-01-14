@@ -58,32 +58,34 @@ export default function ExamFooter() {
 
             {/* Navigation Controls */}
             <div className="flex items-center justify-between border-t border-gray-700 pt-3">
-                {/* Left: Review Button */}
-                <button
-                    onClick={() => toggleFlag(currentQuestionId)}
-                    className={`
-            flex items-center gap-2 px-4 py-2 rounded-lg transition-colors
-            ${questionStatus[currentQuestionIndex]?.status === 'flagged'
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-gray-700 hover:bg-gray-600 text-white'
-                        }
-          `}
-                >
-                    <svg
-                        className="w-5 h-5"
-                        fill={questionStatus[currentQuestionIndex]?.status === 'flagged' ? 'currentColor' : 'none'}
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                {/* Left: Flag and Review Buttons */}
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => toggleFlag(currentQuestionId)}
+                        className={`
+                            flex items-center gap-2 px-4 py-2 rounded-lg transition-colors border
+                            ${questionStatus[currentQuestionIndex]?.status === 'flagged'
+                                ? 'bg-amber-500 border-amber-500 text-white'
+                                : 'bg-gray-800 border-gray-600 hover:bg-gray-700 text-gray-300'
+                            }
+                        `}
                     >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
-                        />
-                    </svg>
-                    <span>Review</span>
-                </button>
+                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                            <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z" />
+                        </svg>
+                        <span>{questionStatus[currentQuestionIndex]?.status === 'flagged' ? 'Flagged' : 'Flag'}</span>
+                    </button>
+
+                    <button
+                        onClick={useExam().toggleReviewScreen}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors bg-gray-800 border border-gray-600 hover:bg-gray-700 text-gray-300"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        <span>Review</span>
+                    </button>
+                </div>
 
                 {/* Center: Question Indicator */}
                 <div className="text-gray-400">
