@@ -16,7 +16,7 @@ export default function ExamHeader() {
                 <div className="h-8 w-px bg-gray-700" />
                 <div className="flex flex-col">
                     <span className="text-sm text-gray-400">Test</span>
-                    <span className="font-medium">IELTS Listening</span>
+                    <span className="font-medium">IELTS Reading</span>
                 </div>
             </div>
 
