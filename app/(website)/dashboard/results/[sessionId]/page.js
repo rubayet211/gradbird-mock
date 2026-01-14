@@ -62,6 +62,7 @@ export default async function Page({ params }) {
                 results={results}
                 scores={scores}
                 mockTestTitle={mockTest.title}
+                feedback={testSession.feedback}
             />
         </div>
     );

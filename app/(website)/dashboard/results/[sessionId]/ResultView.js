@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function ResultView({ results, scores, mockTestTitle }) {
+export default function ResultView({ results, scores, mockTestTitle, feedback }) {
     const [activeTab, setActiveTab] = useState('reading');
 
     const getScoreColor = (band) => {
@@ -48,11 +48,33 @@ export default function ResultView({ results, scores, mockTestTitle }) {
                     </div>
                     <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
                         <div className="text-sm text-gray-600 font-medium mb-1">Writing & Speaking</div>
-                        <div className="text-sm font-medium text-amber-600 bg-amber-50 rounded px-2 py-1 inline-block mt-2">
-                            Pending Grading
-                        </div>
+                        {(scores.writing > 0 || scores.speaking > 0) ? (
+                            <div className="mt-2 space-y-1">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span>Writing:</span>
+                                    <span className={`font-bold ${getScoreColor(scores.writing)}`}>{scores.writing}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span>Speaking:</span>
+                                    <span className={`font-bold ${getScoreColor(scores.speaking)}`}>{scores.speaking}</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-sm font-medium text-amber-600 bg-amber-50 rounded px-2 py-1 inline-block mt-2">
+                                Pending Grading
+                            </div>
+                        )}
                     </div>
                 </div>
+
+                {/* Feedback Section */}
+                {feedback && (
+                    <div className="mt-6 bg-blue-50/50 p-6 rounded-xl border border-blue-100">
+                        <h3 className="text-md font-bold text-gray-800 mb-2">Examiner Feedback</h3>
+                        <p className="text-gray-700 whitespace-pre-wrap">{feedback}</p>
+                    </div>
+                )}
+
             </div>
 
             {/* Detailed Breakdown */}
@@ -62,8 +84,8 @@ export default function ResultView({ results, scores, mockTestTitle }) {
                     <button
                         onClick={() => setActiveTab('reading')}
                         className={`flex-1 py-4 text-center font-medium transition-colors ${activeTab === 'reading'
-                                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
-                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                            ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                             }`}
                     >
                         Reading Review
@@ -71,8 +93,8 @@ export default function ResultView({ results, scores, mockTestTitle }) {
                     <button
                         onClick={() => setActiveTab('listening')}
                         className={`flex-1 py-4 text-center font-medium transition-colors ${activeTab === 'listening'
-                                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
-                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                            ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                             }`}
                     >
                         Listening Review
