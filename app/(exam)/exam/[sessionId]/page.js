@@ -1,7 +1,7 @@
 'use client';
 
 import ExamHeader from '../../components/ExamHeader';
-import WritingInterface from '../../components/WritingInterface';
+import ReadingInterface from '../../components/ReadingInterface';
 
 export default function ExamPage({ params }) {
     return (
@@ -9,8 +9,8 @@ export default function ExamPage({ params }) {
             {/* Header */}
             <ExamHeader />
 
-            {/* Main Content Area - Writing Interface */}
-            <WritingInterface />
+            {/* Main Content Area - Reading Interface */}
+            <ReadingInterface />
         </div>
     );
 }

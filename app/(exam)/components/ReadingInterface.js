@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useExam } from '../contexts/ExamContext';
 import ResizableSplitPane from './ResizableSplitPane';
+import ContextMenu from './ContextMenu';
+import NoteModal from './NoteModal';
 
 // Sample IELTS Reading Passage
 const READING_PASSAGE = `
@@ -71,38 +73,34 @@ const READING_QUESTIONS = [
 export default function ReadingInterface() {
     const { setAnswer, answers } = useExam();
     const [highlights, setHighlights] = useState([]);
-    const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0 });
+    const [notes, setNotes] = useState([]);
+    const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
     const [selectedRange, setSelectedRange] = useState(null);
+    const [noteModalOpen, setNoteModalOpen] = useState(false);
+    const [selectedTextForNote, setSelectedTextForNote] = useState('');
     const passageRef = useRef(null);
     const contentRef = useRef(null);
 
-    // Handle text selection in the passage
-    const handleMouseUp = useCallback((e) => {
+    // Handle right-click context menu on text selection
+    const handleContextMenu = useCallback((e) => {
         const selection = window.getSelection();
         const selectedText = selection.toString().trim();
 
         if (selectedText && contentRef.current?.contains(selection.anchorNode)) {
+            e.preventDefault();
             const range = selection.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-            const passageRect = passageRef.current.getBoundingClientRect();
-
-            setTooltip({
-                visible: true,
-                x: rect.left + rect.width / 2 - passageRect.left,
-                y: rect.top - passageRect.top - 10,
-            });
             setSelectedRange(range.cloneRange());
-        } else {
-            setTooltip({ visible: false, x: 0, y: 0 });
-            setSelectedRange(null);
+            setContextMenu({
+                visible: true,
+                x: e.clientX,
+                y: e.clientY,
+            });
         }
     }, []);
 
-    // Handle clicking outside to hide tooltip
-    const handleMouseDown = useCallback((e) => {
-        if (!e.target.closest('.highlight-tooltip')) {
-            setTooltip({ visible: false, x: 0, y: 0 });
-        }
+    // Close context menu
+    const closeContextMenu = useCallback(() => {
+        setContextMenu({ visible: false, x: 0, y: 0 });
     }, []);
 
     // Apply highlight to selected text
@@ -140,10 +138,66 @@ export default function ReadingInterface() {
             setHighlights(prev => [...prev, newHighlight]);
         }
 
-        // Clear selection and hide tooltip
+        // Clear selection and hide context menu
         window.getSelection().removeAllRanges();
-        setTooltip({ visible: false, x: 0, y: 0 });
+        closeContextMenu();
         setSelectedRange(null);
+    }, [selectedRange, closeContextMenu]);
+
+    // Handle Note action - open note modal
+    const handleNote = useCallback(() => {
+        if (!selectedRange) return;
+        const selectedText = selectedRange.toString();
+        if (!selectedText) return;
+
+        setSelectedTextForNote(selectedText);
+        setNoteModalOpen(true);
+        closeContextMenu();
+    }, [selectedRange, closeContextMenu]);
+
+    // Save note with highlighted text
+    const handleSaveNote = useCallback((noteText) => {
+        if (!selectedRange) return;
+
+        const selectedText = selectedRange.toString();
+        if (!selectedText) return;
+
+        // Create highlight and note data
+        const highlightId = Date.now();
+        const newNote = {
+            id: highlightId,
+            text: selectedText,
+            note: noteText,
+        };
+
+        // Wrap the selection in a highlight span with note indicator
+        try {
+            const span = document.createElement('span');
+            span.className = 'bg-blue-200 rounded px-0.5 border-b-2 border-blue-400';
+            span.dataset.highlightId = highlightId;
+            span.dataset.hasNote = 'true';
+            span.title = noteText;
+            selectedRange.surroundContents(span);
+        } catch (error) {
+            console.warn('Complex selection, using alternative highlight method');
+            const fragment = selectedRange.extractContents();
+            const span = document.createElement('span');
+            span.className = 'bg-blue-200 rounded px-0.5 border-b-2 border-blue-400';
+            span.dataset.highlightId = highlightId;
+            span.dataset.hasNote = 'true';
+            span.title = noteText;
+            span.appendChild(fragment);
+            selectedRange.insertNode(span);
+        }
+
+        setNotes(prev => [...prev, newNote]);
+        setHighlights(prev => [...prev, { id: highlightId, text: selectedText }]);
+
+        // Clear selection
+        window.getSelection().removeAllRanges();
+        setSelectedRange(null);
+        setNoteModalOpen(false);
+        setSelectedTextForNote('');
     }, [selectedRange]);
 
     // Handle answer selection for True/False/Not Given questions
@@ -156,29 +210,8 @@ export default function ReadingInterface() {
         <div
             ref={passageRef}
             className="h-full overflow-y-auto bg-white relative select-text"
-            onMouseUp={handleMouseUp}
-            onMouseDown={handleMouseDown}
+            onContextMenu={handleContextMenu}
         >
-            {/* Highlight Tooltip */}
-            {tooltip.visible && (
-                <div
-                    className="highlight-tooltip absolute z-50 transform -translate-x-1/2 -translate-y-full"
-                    style={{ left: tooltip.x, top: tooltip.y }}
-                >
-                    <button
-                        onClick={handleHighlight}
-                        className="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow-lg hover:bg-gray-800 transition-colors flex items-center gap-1.5"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                        Highlight
-                    </button>
-                    <div className="absolute left-1/2 transform -translate-x-1/2 top-full">
-                        <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-gray-900"></div>
-                    </div>
-                </div>
-            )}
 
             {/* Passage Content */}
             <div className="p-6">
@@ -309,6 +342,31 @@ export default function ReadingInterface() {
                 leftPanel={leftPaneContent}
                 rightPanel={rightPaneContent}
             />
+
+            {/* Context Menu */}
+            {contextMenu.visible && (
+                <ContextMenu
+                    x={contextMenu.x}
+                    y={contextMenu.y}
+                    onHighlight={handleHighlight}
+                    onNote={handleNote}
+                    onClose={closeContextMenu}
+                />
+            )}
+
+            {/* Note Modal */}
+            {noteModalOpen && (
+                <NoteModal
+                    selectedText={selectedTextForNote}
+                    onSave={handleSaveNote}
+                    onClose={() => {
+                        setNoteModalOpen(false);
+                        setSelectedTextForNote('');
+                        window.getSelection().removeAllRanges();
+                        setSelectedRange(null);
+                    }}
+                />
+            )}
         </div>
     );
 }
