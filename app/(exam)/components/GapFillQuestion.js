@@ -38,7 +38,7 @@ export default function GapFillQuestion({
                     questionNumber={startNumber + index}
                     answer={answers[question.id] || ''}
                     onAnswerChange={onAnswerChange}
-                    disabled={props.disabled}
+                    disabled={disabled}
                 />
             ))}
         </div>
@@ -54,6 +54,7 @@ function GapFillItem({
     questionNumber,
     answer,
     onAnswerChange,
+    disabled,
 }) {
     const { id, text, wordLimit } = question;
 
@@ -191,7 +192,7 @@ function GapFillItem({
                                         value={blankValue}
                                         onChange={(e) => handleBlankChange(segment.index, e.target.value)}
                                         placeholder="..."
-                                        disabled={props.disabled}
+                                        disabled={disabled}
                                         className={`
                                             min-w-[120px] max-w-[200px] px-3 py-1.5 
                                             border-b-2 rounded-t

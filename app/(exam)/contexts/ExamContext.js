@@ -49,6 +49,31 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         localStorage.setItem('exam-theme', theme);
     }, [theme]);
 
+    // Font Size state
+    const [fontSize, setFontSize] = useState('standard'); // 'standard' | 'large' | 'extra-large'
+
+    // Load font size from localStorage on mount
+    useEffect(() => {
+        const storedFontSize = localStorage.getItem('exam-font-size');
+        if (storedFontSize) {
+            setFontSize(storedFontSize);
+        }
+    }, []);
+
+    // Apply font size to document body
+    useEffect(() => {
+        document.body.setAttribute('data-font-size', fontSize);
+        localStorage.setItem('exam-font-size', fontSize);
+    }, [fontSize]);
+
+    const toggleFontSize = useCallback(() => {
+        setFontSize((prev) => {
+            if (prev === 'standard') return 'large';
+            if (prev === 'large') return 'extra-large';
+            return 'standard';
+        });
+    }, []);
+
     // Log security events to server
     const logSecurityEvent = useCallback(async (eventType) => {
         if (!sessionId) return;
@@ -275,6 +300,9 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         // Theme
         theme,
         setTheme,
+        // Font Size
+        fontSize,
+        toggleFontSize,
     };
 
     return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

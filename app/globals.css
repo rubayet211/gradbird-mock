@@ -3,6 +3,17 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Font Scaling Factors */
+  --font-scale-standard: 1;
+  --font-scale-large: 1.125;
+  /* 18px base equivalent */
+  --font-scale-xl: 1.25;
+  /* 20px base equivalent */
+
+  /* Default Scale */
+  --font-scale: var(--font-scale-standard);
+  font-size: calc(16px * var(--font-scale));
 }
 
 @theme inline {
@@ -50,6 +61,18 @@
   --border-color: #ffff00;
   --header-bg: #000000;
   --header-text: #ffff00;
+}
+
+[data-font-size="standard"] {
+  --font-scale: var(--font-scale-standard);
+}
+
+[data-font-size="large"] {
+  --font-scale: var(--font-scale-large);
+}
+
+[data-font-size="extra-large"] {
+  --font-scale: var(--font-scale-xl);
 }
 
 body {
