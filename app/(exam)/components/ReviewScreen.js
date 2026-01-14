@@ -114,10 +114,7 @@ export default function ReviewScreen() {
             {/* Footer Actions */}
             <div className="p-6 border-t border-gray-700 bg-gray-800 flex justify-end">
                 <button
-                    onClick={() => {
-                        // Implement submit logic here later
-                        alert("Submit functionality coming soon!");
-                    }}
+                    onClick={submitExam}
                     className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-lg transform hover:-translate-y-0.5 transition-all text-lg flex items-center gap-2"
                 >
                     <span>Submit & End Test</span>
