@@ -1,6 +1,12 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+    getHighlights,
+    saveHighlights,
+    getNotes,
+    saveNotes,
+} from '../../../lib/highlightStorage';
 
 const ExamContext = createContext(null);
 
@@ -16,12 +22,60 @@ const generateInitialQuestionStatus = () => {
     }));
 };
 
-export function ExamProvider({ children, initialTime = INITIAL_TIME }) {
+export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }) {
     const [timeLeft, setTimeLeft] = useState(initialTime);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState({});
     const [questionStatus, setQuestionStatus] = useState(generateInitialQuestionStatus);
     const [isTimerRunning, setIsTimerRunning] = useState(true);
+
+    // Highlight and note state
+    const [highlights, setHighlights] = useState([]);
+    const [notes, setNotes] = useState([]);
+
+    // Load highlights and notes from localStorage on mount
+    useEffect(() => {
+        if (sessionId) {
+            const storedHighlights = getHighlights(sessionId);
+            const storedNotes = getNotes(sessionId);
+            setHighlights(storedHighlights);
+            setNotes(storedNotes);
+        }
+    }, [sessionId]);
+
+    // Save highlights to localStorage when they change
+    useEffect(() => {
+        if (sessionId && highlights.length >= 0) {
+            saveHighlights(sessionId, highlights);
+        }
+    }, [sessionId, highlights]);
+
+    // Save notes to localStorage when they change
+    useEffect(() => {
+        if (sessionId && notes.length >= 0) {
+            saveNotes(sessionId, notes);
+        }
+    }, [sessionId, notes]);
+
+    // Add a new highlight
+    const addHighlight = useCallback((highlight) => {
+        setHighlights((prev) => [...prev, highlight]);
+    }, []);
+
+    // Remove a highlight by ID
+    const removeHighlight = useCallback((highlightId) => {
+        setHighlights((prev) => prev.filter((h) => h.id !== highlightId));
+    }, []);
+
+    // Add a new note
+    const addNote = useCallback((note) => {
+        setNotes((prev) => [...prev, note]);
+    }, []);
+
+    // Remove a note by ID
+    const removeNote = useCallback((noteId) => {
+        setNotes((prev) => prev.filter((n) => n.id !== noteId));
+    }, []);
 
     // Timer countdown effect
     useEffect(() => {
@@ -110,6 +164,14 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME }) {
         setAnswer,
         toggleFlag,
         toggleTimer,
+        // Highlight and note management
+        highlights,
+        notes,
+        addHighlight,
+        removeHighlight,
+        addNote,
+        removeNote,
+        sessionId,
     };
 
     return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

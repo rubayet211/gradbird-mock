@@ -1,14 +1,15 @@
+'use client';
+
+import { useParams } from 'next/navigation';
 import { ExamProvider } from './contexts/ExamContext';
 import SecurityGuard from './components/SecurityGuard';
 
-export const metadata = {
-    title: 'IELTS Exam - Computer Delivered Test',
-    description: 'IELTS Computer-Delivered Exam Interface',
-};
-
 export default function ExamLayout({ children }) {
+    const params = useParams();
+    const sessionId = params?.sessionId;
+
     return (
-        <ExamProvider>
+        <ExamProvider sessionId={sessionId}>
             <SecurityGuard />
             <div className="min-h-screen bg-gray-800 flex flex-col">
                 {children}
@@ -16,3 +17,4 @@ export default function ExamLayout({ children }) {
         </ExamProvider>
     );
 }
+

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useExam } from '../contexts/ExamContext';
 import ResizableSplitPane from './ResizableSplitPane';
 import ContextMenu from './ContextMenu';
@@ -71,15 +71,95 @@ const READING_QUESTIONS = [
 ];
 
 export default function ReadingInterface() {
-    const { setAnswer, answers } = useExam();
-    const [highlights, setHighlights] = useState([]);
-    const [notes, setNotes] = useState([]);
+    const {
+        setAnswer,
+        answers,
+        highlights,
+        notes,
+        addHighlight,
+        removeHighlight,
+        addNote
+    } = useExam();
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
     const [selectedRange, setSelectedRange] = useState(null);
     const [noteModalOpen, setNoteModalOpen] = useState(false);
     const [selectedTextForNote, setSelectedTextForNote] = useState('');
     const passageRef = useRef(null);
     const contentRef = useRef(null);
+    const [isRestored, setIsRestored] = useState(false);
+
+    // Restore highlights from context on mount
+    useEffect(() => {
+        if (isRestored || !contentRef.current || highlights.length === 0) return;
+
+        // Mark as restored to prevent re-running
+        setIsRestored(true);
+
+        // Restore each highlight by finding the text and wrapping it
+        highlights.forEach((highlight) => {
+            const textNodes = getTextNodes(contentRef.current);
+            for (const node of textNodes) {
+                const index = node.textContent.indexOf(highlight.text);
+                if (index !== -1) {
+                    const range = document.createRange();
+                    range.setStart(node, index);
+                    range.setEnd(node, index + highlight.text.length);
+
+                    const span = document.createElement('span');
+                    const hasNote = notes.some(n => n.id === highlight.id);
+                    const noteData = notes.find(n => n.id === highlight.id);
+
+                    if (hasNote && noteData) {
+                        span.className = 'bg-blue-200 rounded px-0.5 border-b-2 border-blue-400 cursor-pointer hover:bg-blue-300 transition-colors';
+                        span.dataset.hasNote = 'true';
+                        span.title = noteData.note;
+                    } else {
+                        span.className = 'bg-yellow-200 rounded px-0.5 cursor-pointer hover:bg-yellow-300 transition-colors';
+                    }
+                    span.dataset.highlightId = highlight.id;
+
+                    try {
+                        range.surroundContents(span);
+                    } catch (e) {
+                        // Skip if unable to wrap
+                    }
+                    break; // Only wrap the first occurrence
+                }
+            }
+        });
+    }, [highlights, notes, isRestored]);
+
+    // Helper function to get all text nodes within an element
+    function getTextNodes(element) {
+        const textNodes = [];
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        let node;
+        while ((node = walker.nextNode())) {
+            textNodes.push(node);
+        }
+        return textNodes;
+    }
+
+    // Handle clicking on a highlight to remove it
+    const handleHighlightClick = useCallback((e) => {
+        const span = e.target.closest('[data-highlight-id]');
+        if (span && span.dataset.highlightId) {
+            const highlightId = parseInt(span.dataset.highlightId, 10);
+
+            // Remove the span wrapper but keep the text content
+            const textContent = span.textContent;
+            const textNode = document.createTextNode(textContent);
+            span.parentNode.replaceChild(textNode, span);
+
+            // Remove from context
+            removeHighlight(highlightId);
+        }
+    }, [removeHighlight]);
 
     // Handle right-click context menu on text selection
     const handleContextMenu = useCallback((e) => {
@@ -120,29 +200,29 @@ export default function ReadingInterface() {
         // Wrap the selection in a highlight span
         try {
             const span = document.createElement('span');
-            span.className = 'bg-yellow-200 rounded px-0.5';
+            span.className = 'bg-yellow-200 rounded px-0.5 cursor-pointer hover:bg-yellow-300 transition-colors';
             span.dataset.highlightId = highlightId;
             selectedRange.surroundContents(span);
 
-            setHighlights(prev => [...prev, newHighlight]);
+            addHighlight(newHighlight);
         } catch (error) {
             // Handle partial element selection - use extractContents approach
             console.warn('Complex selection, using alternative highlight method');
             const fragment = selectedRange.extractContents();
             const span = document.createElement('span');
-            span.className = 'bg-yellow-200 rounded px-0.5';
+            span.className = 'bg-yellow-200 rounded px-0.5 cursor-pointer hover:bg-yellow-300 transition-colors';
             span.dataset.highlightId = highlightId;
             span.appendChild(fragment);
             selectedRange.insertNode(span);
 
-            setHighlights(prev => [...prev, newHighlight]);
+            addHighlight(newHighlight);
         }
 
         // Clear selection and hide context menu
         window.getSelection().removeAllRanges();
         closeContextMenu();
         setSelectedRange(null);
-    }, [selectedRange, closeContextMenu]);
+    }, [selectedRange, closeContextMenu, addHighlight]);
 
     // Handle Note action - open note modal
     const handleNote = useCallback(() => {
@@ -173,7 +253,7 @@ export default function ReadingInterface() {
         // Wrap the selection in a highlight span with note indicator
         try {
             const span = document.createElement('span');
-            span.className = 'bg-blue-200 rounded px-0.5 border-b-2 border-blue-400';
+            span.className = 'bg-blue-200 rounded px-0.5 border-b-2 border-blue-400 cursor-pointer hover:bg-blue-300 transition-colors';
             span.dataset.highlightId = highlightId;
             span.dataset.hasNote = 'true';
             span.title = noteText;
@@ -182,7 +262,7 @@ export default function ReadingInterface() {
             console.warn('Complex selection, using alternative highlight method');
             const fragment = selectedRange.extractContents();
             const span = document.createElement('span');
-            span.className = 'bg-blue-200 rounded px-0.5 border-b-2 border-blue-400';
+            span.className = 'bg-blue-200 rounded px-0.5 border-b-2 border-blue-400 cursor-pointer hover:bg-blue-300 transition-colors';
             span.dataset.highlightId = highlightId;
             span.dataset.hasNote = 'true';
             span.title = noteText;
@@ -190,15 +270,15 @@ export default function ReadingInterface() {
             selectedRange.insertNode(span);
         }
 
-        setNotes(prev => [...prev, newNote]);
-        setHighlights(prev => [...prev, { id: highlightId, text: selectedText }]);
+        addNote(newNote);
+        addHighlight({ id: highlightId, text: selectedText });
 
         // Clear selection
         window.getSelection().removeAllRanges();
         setSelectedRange(null);
         setNoteModalOpen(false);
         setSelectedTextForNote('');
-    }, [selectedRange]);
+    }, [selectedRange, addNote, addHighlight]);
 
     // Handle answer selection for True/False/Not Given questions
     const handleAnswerChange = (questionId, value) => {
@@ -211,6 +291,7 @@ export default function ReadingInterface() {
             ref={passageRef}
             className="h-full overflow-y-auto bg-white relative select-text"
             onContextMenu={handleContextMenu}
+            onClick={handleHighlightClick}
         >
 
             {/* Passage Content */}
