@@ -7,6 +7,10 @@ import {
     getNotes,
     saveNotes,
 } from '../../../lib/highlightStorage';
+import {
+    getWritingResponses,
+    saveWritingResponses,
+} from '../../../lib/writingStorage';
 
 const ExamContext = createContext(null);
 
@@ -106,13 +110,21 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
     const [highlights, setHighlights] = useState([]);
     const [notes, setNotes] = useState([]);
 
-    // Load highlights and notes from localStorage on mount
+    // Writing responses state
+    const [writingResponses, setWritingResponses] = useState({
+        task1Text: '',
+        task2Text: ''
+    });
+
+    // Load highlights, notes, and writing responses from localStorage on mount
     useEffect(() => {
         if (sessionId) {
             const storedHighlights = getHighlights(sessionId);
             const storedNotes = getNotes(sessionId);
+            const storedWriting = getWritingResponses(sessionId);
             setHighlights(storedHighlights);
             setNotes(storedNotes);
+            setWritingResponses(storedWriting);
         }
     }, [sessionId]);
 
@@ -129,6 +141,13 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
             saveNotes(sessionId, notes);
         }
     }, [sessionId, notes]);
+
+    // Save writing responses to localStorage when they change
+    useEffect(() => {
+        if (sessionId) {
+            saveWritingResponses(sessionId, writingResponses);
+        }
+    }, [sessionId, writingResponses]);
 
     // Add a new highlight
     const addHighlight = useCallback((highlight) => {
@@ -155,6 +174,14 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         setNotes((prev) => prev.map((n) =>
             n.id === noteId ? { ...n, ...updates } : n
         ));
+    }, []);
+
+    // Update writing response for a specific task
+    const updateWritingResponse = useCallback((taskNumber, text) => {
+        setWritingResponses((prev) => ({
+            ...prev,
+            [`task${taskNumber}Text`]: text
+        }));
     }, []);
 
     // Timer countdown effect
@@ -289,8 +316,10 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         addNote,
         removeNote,
         updateNote,
-        updateNote,
         sessionId,
+        // Writing response management
+        writingResponses,
+        updateWritingResponse,
         isExamEnded,
         submitExam,
         // Privacy Mode
