@@ -4,13 +4,18 @@ import { useState } from 'react';
 import { useExam, formatTime } from '../contexts/ExamContext';
 import NotesPanel from './NotesPanel';
 
+import SettingsMenu from './SettingsMenu';
+
 export default function ExamHeader() {
     const { timeLeft, notes, toggleHideScreen, isHidden } = useExam();
     const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
 
     return (
         <>
-            <header className="bg-gray-900 text-white px-6 py-3 flex items-center justify-between select-none">
+            <header
+                className="px-6 py-3 flex items-center justify-between select-none shadow-md z-40 relative"
+                style={{ backgroundColor: 'var(--header-bg)', color: 'var(--header-text)' }}
+            >
                 {/* Left: Candidate Details */}
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
@@ -27,7 +32,7 @@ export default function ExamHeader() {
                 {/* Right: Timer and Controls */}
                 <div className="flex items-center gap-4">
                     {/* Timer */}
-                    <div className="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg">
+                    <div className="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg border border-gray-700">
                         <svg
                             className={`w-5 h-5 ${timeLeft <= 300
                                 ? 'text-red-500 animate-pulse'
@@ -58,9 +63,12 @@ export default function ExamHeader() {
                         </span>
                     </div>
 
+                    {/* Settings Menu */}
+                    <SettingsMenu />
+
                     {/* Notes Button */}
                     <button
-                        className="relative flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg transition-colors"
+                        className="relative flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg transition-colors shadow-sm"
                         onClick={() => setIsNotesPanelOpen(true)}
                     >
                         <svg

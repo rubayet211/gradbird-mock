@@ -49,10 +49,13 @@ export default function NoteModal({ selectedText, onSave, onClose }) {
             />
 
             {/* Modal */}
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 animate-in fade-in zoom-in-95 duration-150">
+            <div
+                className="relative rounded-xl shadow-2xl w-full max-w-md mx-4 animate-in fade-in zoom-in-95 duration-150"
+                style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)' }}
+            >
                 {/* Header */}
-                <div className="px-5 py-4 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                    <h3 className="text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
                         <span>📝</span>
                         Add Note
                     </h3>
@@ -62,17 +65,17 @@ export default function NoteModal({ selectedText, onSave, onClose }) {
                 <div className="p-5">
                     {/* Selected text preview */}
                     <div className="mb-4">
-                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        <label className="block text-xs font-medium uppercase tracking-wide mb-2" style={{ color: 'var(--text-color)', opacity: 0.7 }}>
                             Selected Text
                         </label>
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-gray-700 max-h-24 overflow-y-auto">
+                        <div className="border rounded-lg p-3 text-sm max-h-24 overflow-y-auto" style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-color)', color: 'var(--text-color)' }}>
                             "{selectedText}"
                         </div>
                     </div>
 
                     {/* Note input */}
                     <div>
-                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        <label className="block text-xs font-medium uppercase tracking-wide mb-2" style={{ color: 'var(--text-color)', opacity: 0.7 }}>
                             Your Note
                         </label>
                         <textarea
@@ -81,7 +84,12 @@ export default function NoteModal({ selectedText, onSave, onClose }) {
                             onChange={(e) => setNoteText(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder="Type your note here..."
-                            className="w-full h-28 px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            className="w-full h-28 px-4 py-3 border rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            style={{
+                                backgroundColor: 'var(--input-bg)',
+                                color: 'var(--text-color)',
+                                borderColor: 'var(--border-color)'
+                            }}
                         />
                         <p className="mt-1.5 text-xs text-gray-400">
                             Press Ctrl+Enter to save
@@ -90,10 +98,11 @@ export default function NoteModal({ selectedText, onSave, onClose }) {
                 </div>
 
                 {/* Footer */}
-                <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <div className="px-5 py-4 border-t flex justify-end gap-3" style={{ borderColor: 'var(--border-color)' }}>
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="px-4 py-2 text-sm font-medium hover:bg-gray-100/10 rounded-lg transition-colors"
+                        style={{ color: 'var(--text-color)' }}
                     >
                         Cancel
                     </button>

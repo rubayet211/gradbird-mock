@@ -93,13 +93,17 @@ export default function NotesPanel({ isOpen, onClose }) {
             {/* Panel */}
             <div
                 ref={panelRef}
-                className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-200"
+                className="absolute right-0 top-0 h-full w-full max-w-md shadow-2xl flex flex-col animate-in slide-in-from-right duration-200"
+                style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)' }}
             >
                 {/* Header */}
-                <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
+                <div
+                    className="px-5 py-4 border-b flex items-center justify-between"
+                    style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--panel-bg)' }}
+                >
                     <div className="flex items-center gap-2">
                         <span className="text-xl">📝</span>
-                        <h2 className="text-lg font-semibold text-gray-900">
+                        <h2 className="text-lg font-semibold" style={{ color: 'var(--text-color)' }}>
                             My Notes
                         </h2>
                         <span className="ml-2 px-2 py-0.5 bg-amber-200 text-amber-800 text-xs font-medium rounded-full">
@@ -134,21 +138,22 @@ export default function NotesPanel({ isOpen, onClose }) {
                             {notes.map((note) => (
                                 <div
                                     key={note.id}
-                                    className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                                    className="border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                                    style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--input-bg)' }}
                                 >
                                     {/* Selected text */}
                                     <div className="mb-3">
-                                        <span className="text-xs font-medium text-amber-700 uppercase tracking-wide">
+                                        <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-color)', opacity: 0.7 }}>
                                             Highlighted Text
                                         </span>
-                                        <p className="mt-1 text-sm text-gray-700 italic line-clamp-2 bg-white/60 rounded px-2 py-1">
+                                        <p className="mt-1 text-sm italic line-clamp-2 rounded px-2 py-1" style={{ backgroundColor: 'rgba(128,128,128,0.1)', color: 'var(--text-color)' }}>
                                             "{note.text}"
                                         </p>
                                     </div>
 
                                     {/* Note content */}
                                     <div className="mb-3">
-                                        <span className="text-xs font-medium text-amber-700 uppercase tracking-wide">
+                                        <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-color)', opacity: 0.7 }}>
                                             Your Note
                                         </span>
                                         {editingNoteId === note.id ? (
@@ -157,8 +162,9 @@ export default function NotesPanel({ isOpen, onClose }) {
                                                     ref={textareaRef}
                                                     value={editText}
                                                     onChange={(e) => setEditText(e.target.value)}
-                                                    className="w-full h-24 px-3 py-2 text-sm border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                                                    className="w-full h-24 px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
                                                     placeholder="Enter your note..."
+                                                    style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', borderColor: 'var(--border-color)' }}
                                                 />
                                                 <div className="flex gap-2 mt-2">
                                                     <button
@@ -176,7 +182,7 @@ export default function NotesPanel({ isOpen, onClose }) {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <p className="mt-1 text-sm text-gray-800">
+                                            <p className="mt-1 text-sm" style={{ color: 'var(--text-color)' }}>
                                                 {note.note}
                                             </p>
                                         )}
@@ -212,8 +218,8 @@ export default function NotesPanel({ isOpen, onClose }) {
                 </div>
 
                 {/* Footer */}
-                <div className="px-5 py-3 border-t border-gray-200 bg-gray-50">
-                    <p className="text-xs text-gray-400 text-center">
+                <div className="px-5 py-3 border-t" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--panel-bg)' }}>
+                    <p className="text-xs text-center" style={{ color: 'var(--text-color)', opacity: 0.7 }}>
                         Tip: Right-click on text to add new notes
                     </p>
                 </div>

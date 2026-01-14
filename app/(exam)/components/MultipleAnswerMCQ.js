@@ -65,7 +65,10 @@ export default function MultipleAnswerMCQ({
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 transition-all hover:shadow-md">
+        <div
+            className="rounded-xl shadow-sm border p-5 transition-all hover:shadow-md"
+            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)', color: 'var(--text-color)' }}
+        >
             {/* Question Header */}
             <div className="flex gap-4 mb-4">
                 <span className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
@@ -75,7 +78,7 @@ export default function MultipleAnswerMCQ({
                     <p className="text-sm text-purple-600 font-medium mb-1">
                         {instruction}
                     </p>
-                    <p className="text-gray-800 font-medium">
+                    <p className="font-medium" style={{ color: 'var(--text-color)' }}>
                         {text}
                     </p>
                 </div>
@@ -136,10 +139,14 @@ export default function MultipleAnswerMCQ({
                                         ${isSelected
                                             ? 'border-purple-600 bg-purple-600'
                                             : isDisabled
-                                                ? 'border-gray-300 bg-gray-100'
-                                                : 'border-gray-400'
+                                                ? 'opacity-50'
+                                                : ''
                                         }
                                     `}
+                                    style={{
+                                        backgroundColor: isSelected ? undefined : 'var(--input-bg)',
+                                        borderColor: isSelected ? undefined : 'var(--border-color)'
+                                    }}
                                 >
                                     {isSelected && (
                                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

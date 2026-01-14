@@ -32,6 +32,23 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
     const [isExamEnded, setIsExamEnded] = useState(false);
     const [isHidden, setIsHidden] = useState(false);
 
+    // Theme state
+    const [theme, setTheme] = useState('standard'); // 'standard' | 'inverted' | 'high-contrast'
+
+    // Load theme from localStorage on mount
+    useEffect(() => {
+        const storedTheme = localStorage.getItem('exam-theme');
+        if (storedTheme) {
+            setTheme(storedTheme);
+        }
+    }, []);
+
+    // Apply theme to document body
+    useEffect(() => {
+        document.body.setAttribute('data-theme', theme);
+        localStorage.setItem('exam-theme', theme);
+    }, [theme]);
+
     // Log security events to server
     const logSecurityEvent = useCallback(async (eventType) => {
         if (!sessionId) return;
@@ -255,6 +272,9 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         isHidden,
         toggleHideScreen,
         logSecurityEvent,
+        // Theme
+        theme,
+        setTheme,
     };
 
     return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

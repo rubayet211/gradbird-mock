@@ -157,7 +157,10 @@ function GapFillItem({
     }, [answer, blankCount]);
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 transition-all hover:shadow-md">
+        <div
+            className="rounded-xl shadow-sm border p-5 transition-all hover:shadow-md"
+            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)', color: 'var(--text-color)' }}
+        >
             <div className="flex gap-4">
                 {/* Question Number */}
                 <span className="flex-shrink-0 w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
@@ -166,7 +169,7 @@ function GapFillItem({
 
                 {/* Question Content with Inline Inputs */}
                 <div className="flex-1">
-                    <div className="text-gray-800 leading-relaxed flex flex-wrap items-center gap-1">
+                    <div className="leading-relaxed flex flex-wrap items-center gap-1" style={{ color: 'var(--text-color)' }}>
                         {segments.map((segment, idx) => {
                             if (segment.type === 'text') {
                                 return (
@@ -191,19 +194,22 @@ function GapFillItem({
                                         disabled={props.disabled}
                                         className={`
                                             min-w-[120px] max-w-[200px] px-3 py-1.5 
-                                            border-b-2 bg-gray-50 rounded-t
+                                            border-b-2 rounded-t
                                             text-center font-medium
-                                            focus:outline-none focus:bg-white transition-all
-                                            disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed
+                                            focus:outline-none transition-all
+                                            disabled:opacity-50 disabled:cursor-not-allowed
                                             ${isOverLimit
                                                 ? 'border-red-500 text-red-700 bg-red-50'
                                                 : blankValue
                                                     ? 'border-teal-500 text-teal-700'
-                                                    : 'border-gray-300 text-gray-700'
+                                                    : 'border-gray-300'
                                             }
                                         `}
                                         style={{
                                             width: `${Math.max(120, (blankValue.length + 3) * 10)}px`,
+                                            backgroundColor: isOverLimit ? undefined : 'var(--input-bg)',
+                                            color: 'var(--text-color)',
+                                            borderColor: (!isOverLimit && !blankValue) ? 'var(--border-color)' : undefined
                                         }}
                                     />
                                     {/* Word count indicator */}

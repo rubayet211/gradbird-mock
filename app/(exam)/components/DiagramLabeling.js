@@ -26,14 +26,17 @@ export default function DiagramLabeling({
     const { questions, imageUrl, instruction } = questionGroup;
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div
+            className="rounded-xl shadow-sm border p-6"
+            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)', color: 'var(--text-color)' }}
+        >
             {/* Header / Instructions */}
             <div className="mb-6">
                 <div className="flex items-center gap-3 mb-3">
                     <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
                         {startNumber}-{startNumber + questions.length - 1}
                     </span>
-                    <h3 className="text-lg font-semibold text-gray-800">Label the diagram below.</h3>
+                    <h3 className="text-lg font-semibold" style={{ color: 'var(--text-color)' }}>Label the diagram below.</h3>
                 </div>
                 {instruction && (
                     <p className="text-gray-600 ml-11">{instruction}</p>
@@ -79,12 +82,17 @@ export default function DiagramLabeling({
                                         className={`
                                             w-32 sm:w-40 px-3 py-1.5 pl-3 rounded-md border-2 shadow-sm text-sm font-medium
                                             focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all
-                                            disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed
+                                            disabled:opacity-50 disabled:cursor-not-allowed
                                             ${currentValue
                                                 ? 'border-blue-600 bg-blue-50 text-blue-800'
-                                                : 'border-gray-300 bg-white/90 hover:border-blue-400 focus:border-blue-600'
+                                                : 'focus:border-blue-600'
                                             }
                                         `}
+                                        style={{
+                                            backgroundColor: currentValue ? undefined : 'var(--input-bg)',
+                                            borderColor: currentValue ? undefined : 'var(--border-color)',
+                                            color: currentValue ? undefined : 'var(--text-color)'
+                                        }}
                                     />
                                 </div>
 

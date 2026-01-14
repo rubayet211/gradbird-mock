@@ -40,7 +40,12 @@ function DraggableOption({ id, children, isUsed, disabled }) {
     return (
         <div
             ref={setNodeRef}
-            style={style}
+            style={{
+                ...style,
+                backgroundColor: isDragging ? undefined : isUsed ? undefined : 'var(--input-bg)',
+                borderColor: isDragging || isUsed ? undefined : 'var(--border-color)',
+                color: isUsed ? undefined : 'var(--text-color)'
+            }}
             {...attributes}
             {...listeners}
             className={`
@@ -50,7 +55,7 @@ function DraggableOption({ id, children, isUsed, disabled }) {
                     ? 'border-blue-500 bg-blue-100 shadow-lg scale-105 z-50'
                     : isUsed
                         ? 'border-gray-200 bg-gray-100 text-gray-400'
-                        : 'border-gray-300 bg-white hover:border-blue-400 hover:shadow-md'
+                        : 'hover:border-blue-400 hover:shadow-md'
                 }
             `}
         >
@@ -74,15 +79,20 @@ function DroppableSlot({ id, questionNumber, itemText, droppedOption, onRemove, 
             ref={setNodeRef}
             {...attributes}
             {...listeners}
+            {...listeners}
             className={`
                 flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200
                 ${isOver && active
                     ? 'border-blue-500 bg-blue-50 shadow-inner'
                     : droppedOption
                         ? 'border-green-300 bg-green-50'
-                        : 'border-dashed border-gray-300 bg-gray-50'
+                        : 'border-dashed'
                 }
             `}
+            style={{
+                backgroundColor: (isOver && active) || droppedOption ? undefined : 'var(--input-bg)',
+                borderColor: (isOver && active) || droppedOption ? undefined : 'var(--border-color)'
+            }}
         >
             {/* Question Number */}
             <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
@@ -91,7 +101,7 @@ function DroppableSlot({ id, questionNumber, itemText, droppedOption, onRemove, 
 
             {/* Item Text */}
             <div className="flex-1">
-                <p className="text-gray-800 font-medium">{itemText}</p>
+                <p className="font-medium" style={{ color: 'var(--text-color)' }}>{itemText}</p>
             </div>
 
             {/* Drop Zone / Dropped Option */}
@@ -110,8 +120,10 @@ function DroppableSlot({ id, questionNumber, itemText, droppedOption, onRemove, 
                 ) : (
                     <div className={`
                         px-4 py-2 rounded-lg border-2 border-dashed text-sm text-gray-400 text-center
-                        ${isOver ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-gray-300'}
-                    `}>
+                        ${isOver ? 'border-blue-500 bg-blue-100 text-blue-600' : ''}
+                    `}
+                        style={{ borderColor: isOver ? undefined : 'var(--border-color)' }}
+                    >
                         Drop here
                     </div>
                 )}
@@ -213,7 +225,7 @@ export default function MatchingQuestion({
                             <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">
                                 Options
                             </h3>
-                            <div className="space-y-2 p-4 bg-gray-100 rounded-xl min-h-[200px]">
+                            <div className="space-y-2 p-4 rounded-xl min-h-[200px]" style={{ backgroundColor: 'var(--panel-bg)' }}>
                                 {questionGroup.options.map((option, index) => (
                                     <DraggableOption
                                         key={`option-${index}`}

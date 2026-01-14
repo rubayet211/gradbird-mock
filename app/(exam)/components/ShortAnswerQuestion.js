@@ -24,9 +24,12 @@ export default function ShortAnswerQuestion({ questionGroup, answers, onAnswerCh
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 transition-all hover:shadow-md">
+        <div
+            className="rounded-xl shadow-sm border p-6 transition-all hover:shadow-md"
+            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)', color: 'var(--text-color)' }}
+        >
             <div className="mb-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-2">
+                <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-color)' }}>
                     {questionGroup.instruction || 'Answer the questions below.'}
                 </h3>
                 {questionGroup.wordLimitDescription && (
@@ -54,7 +57,8 @@ export default function ShortAnswerQuestion({ questionGroup, answers, onAnswerCh
                             <div className="flex-1 space-y-3">
                                 <label
                                     htmlFor={question.id}
-                                    className="text-gray-800 font-medium block leading-relaxed"
+                                    className="font-medium block leading-relaxed"
+                                    style={{ color: 'var(--text-color)' }}
                                 >
                                     {question.text}
                                 </label>
@@ -69,12 +73,17 @@ export default function ShortAnswerQuestion({ questionGroup, answers, onAnswerCh
                                             disabled={disabled}
                                             className={`
                                                 w-full px-4 py-2 rounded-lg border-2 outline-none transition-all
-                                                disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed
+                                                disabled:opacity-50 disabled:cursor-not-allowed
                                                 ${isOverLimit
                                                     ? 'border-red-300 focus:border-red-500 bg-red-50'
-                                                    : 'border-gray-300 focus:border-blue-500 hover:border-blue-300'
+                                                    : 'focus:border-blue-500 hover:border-blue-300'
                                                 }
                                             `}
+                                            style={{
+                                                backgroundColor: isOverLimit ? undefined : 'var(--input-bg)',
+                                                color: 'var(--text-color)',
+                                                borderColor: isOverLimit ? undefined : 'var(--border-color)'
+                                            }}
                                             placeholder="Type your answer here..."
                                             autoComplete="off"
                                         />

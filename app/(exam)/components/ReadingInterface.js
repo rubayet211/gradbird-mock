@@ -453,7 +453,8 @@ export default function ReadingInterface() {
     const leftPaneContent = (
         <div
             ref={passageRef}
-            className="h-full overflow-y-auto bg-white relative select-text"
+            className="h-full overflow-y-auto relative select-text transition-colors duration-300"
+            style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
             onContextMenu={handleContextMenu}
             onClick={handleHighlightClick}
         >
@@ -488,21 +489,21 @@ export default function ReadingInterface() {
 
             {/* Passage Content */}
             <div className="p-6 pl-12">
-                <div className="mb-4 pb-4 border-b border-gray-200">
+                <div className="mb-4 pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                     <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                         Reading Passage 1
                     </span>
-                    <p className="mt-3 text-sm text-gray-500">
+                    <p className="mt-3 text-sm opacity-80">
                         You should spend about 20 minutes on Questions 1-13, which are based on the reading passage below.
                     </p>
                 </div>
 
-                <div ref={contentRef} className="prose prose-gray max-w-none">
+                <div ref={contentRef} className="max-w-none">
                     {READING_PASSAGE.split('\n\n').map((paragraph, index) => {
                         if (index === 0) return null; // Skip empty first line
                         if (index === 1) {
                             return (
-                                <h1 key={index} className="text-2xl font-bold text-gray-900 mb-6">
+                                <h1 key={index} className="text-2xl font-bold mb-6" style={{ color: 'var(--text-color)' }}>
                                     {paragraph}
                                 </h1>
                             );
@@ -510,13 +511,13 @@ export default function ReadingInterface() {
                         // Check if paragraph is a heading (short and no period at end)
                         if (paragraph.length < 50 && !paragraph.endsWith('.')) {
                             return (
-                                <h2 key={index} className="text-lg font-semibold text-gray-800 mt-6 mb-3">
+                                <h2 key={index} className="text-lg font-semibold mt-6 mb-3" style={{ color: 'var(--text-color)' }}>
                                     {paragraph}
                                 </h2>
                             );
                         }
                         return (
-                            <p key={index} className="text-gray-700 leading-relaxed mb-4">
+                            <p key={index} className="leading-relaxed mb-4" style={{ color: 'var(--text-color)' }}>
                                 {paragraph}
                             </p>
                         );
@@ -528,10 +529,10 @@ export default function ReadingInterface() {
 
     // Right pane content - Questions
     const rightPaneContent = (
-        <div className="h-full overflow-y-auto bg-gray-50">
+        <div className="h-full overflow-y-auto transition-colors duration-300" style={{ backgroundColor: 'var(--panel-bg)' }}>
             <div className="p-6">
                 {/* Questions Header */}
-                <div className="mb-6 pb-4 border-b border-gray-200">
+                <div className="mb-6 pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                     <h2 className="text-xl font-bold text-gray-800">Questions 1-13</h2>
                     <p className="mt-2 text-sm text-gray-600">
                         Do the following statements agree with the information given in the reading passage?
@@ -551,14 +552,15 @@ export default function ReadingInterface() {
                     {READING_QUESTIONS.map((question) => (
                         <div
                             key={question.id}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 transition-all hover:shadow-md"
+                            className="rounded-xl shadow-sm border p-5 transition-all hover:shadow-md"
+                            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)', color: 'var(--text-color)' }}
                         >
                             <div className="flex gap-4">
                                 <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
                                     {question.id}
                                 </span>
                                 <div className="flex-1">
-                                    <p className="text-gray-800 font-medium mb-4">{question.text}</p>
+                                    <p className="font-medium mb-4" style={{ color: 'var(--text-color)' }}>{question.text}</p>
                                     <div className="flex gap-4">
                                         {['TRUE', 'FALSE', 'NOT GIVEN'].map((option) => (
                                             <label
