@@ -6,6 +6,7 @@ import ResizableSplitPane from './ResizableSplitPane';
 import ContextMenu from './ContextMenu';
 import NoteModal from './NoteModal';
 import NoteMarginIcon from './NoteMarginIcon';
+import MatchingQuestion from './MatchingQuestion';
 
 // Sample IELTS Reading Passage
 const READING_PASSAGE = `
@@ -70,6 +71,28 @@ const READING_QUESTIONS = [
     { id: 12, text: "Citizen science projects help monitor monarch populations." },
     { id: 13, text: "Recent years have shown some population recovery for monarchs." },
 ];
+
+// Sample Matching questions for IELTS Reading
+const MATCHING_QUESTIONS = {
+    id: 'matching-1',
+    type: 'Matching',
+    instruction: 'Match each statement with the correct section of the passage. Choose the appropriate letter (A-E) for each statement.',
+    items: [
+        { id: 'A', text: 'Describes the navigational abilities of monarch butterflies' },
+        { id: 'B', text: 'Explains why monarchs need to migrate south' },
+        { id: 'C', text: 'Discusses threats from habitat loss' },
+        { id: 'D', text: 'Mentions the visual appearance of the species' },
+        { id: 'E', text: 'Describes international conservation cooperation' },
+    ],
+    options: [
+        'The Journey South',
+        'The Mexican Wintering Grounds',
+        'The Return Journey',
+        'Conservation Challenges',
+        'Conservation Efforts',
+        'Introduction',
+    ],
+};
 
 export default function ReadingInterface() {
     const {
@@ -457,6 +480,23 @@ export default function ReadingInterface() {
                             </div>
                         </div>
                     ))}
+                </div>
+
+                {/* Matching Questions Section */}
+                <div className="mt-10 pt-6 border-t-2 border-gray-300">
+                    <div className="mb-6 pb-4 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800">Questions 14-18</h2>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Match each statement with the correct section of the passage.
+                        </p>
+                    </div>
+
+                    <MatchingQuestion
+                        questionGroup={MATCHING_QUESTIONS}
+                        startNumber={14}
+                        answers={answers}
+                        onAnswerChange={handleAnswerChange}
+                    />
                 </div>
 
                 {/* Bottom spacing */}
