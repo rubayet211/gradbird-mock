@@ -19,6 +19,10 @@ const TransactionSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    phoneNumber: {
+        type: String,
+        required: true,
+    },
     status: {
         type: String,
         enum: ['pending', 'approved', 'rejected'],
