@@ -20,7 +20,8 @@ export default function DiagramLabeling({
     questionGroup,
     startNumber,
     answers,
-    onAnswerChange
+    onAnswerChange,
+    disabled = false
 }) {
     const { questions, imageUrl, instruction } = questionGroup;
 
@@ -74,9 +75,11 @@ export default function DiagramLabeling({
                                         value={currentValue}
                                         onChange={(e) => onAnswerChange(question.id, e.target.value)}
                                         placeholder={question.label || "Label..."}
+                                        disabled={disabled}
                                         className={`
                                             w-32 sm:w-40 px-3 py-1.5 pl-3 rounded-md border-2 shadow-sm text-sm font-medium
                                             focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all
+                                            disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed
                                             ${currentValue
                                                 ? 'border-blue-600 bg-blue-50 text-blue-800'
                                                 : 'border-gray-300 bg-white/90 hover:border-blue-400 focus:border-blue-600'

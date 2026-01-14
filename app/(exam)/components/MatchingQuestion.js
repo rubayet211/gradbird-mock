@@ -20,7 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 // Draggable Option Component
-function DraggableOption({ id, children, isUsed }) {
+function DraggableOption({ id, children, isUsed, disabled }) {
     const {
         attributes,
         listeners,
@@ -28,13 +28,13 @@ function DraggableOption({ id, children, isUsed }) {
         transform,
         transition,
         isDragging,
-    } = useSortable({ id, disabled: isUsed });
+    } = useSortable({ id, disabled: isUsed || disabled });
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : isUsed ? 0.4 : 1,
-        cursor: isUsed ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',
+        opacity: isDragging ? 0.5 : (isUsed || disabled) ? 0.4 : 1,
+        cursor: (isUsed || disabled) ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',
     };
 
     return (
@@ -60,7 +60,7 @@ function DraggableOption({ id, children, isUsed }) {
 }
 
 // Droppable Slot Component
-function DroppableSlot({ id, questionNumber, itemText, droppedOption, onRemove }) {
+function DroppableSlot({ id, questionNumber, itemText, droppedOption, onRemove, disabled }) {
     const {
         attributes,
         listeners,
@@ -98,8 +98,8 @@ function DroppableSlot({ id, questionNumber, itemText, droppedOption, onRemove }
             <div className="flex-shrink-0 min-w-[140px]">
                 {droppedOption ? (
                     <div
-                        className="px-4 py-2 rounded-lg border-2 border-green-400 bg-green-100 text-green-800 font-medium text-sm flex items-center gap-2 cursor-pointer hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors"
-                        onClick={onRemove}
+                        className={`px-4 py-2 rounded-lg border-2 border-green-400 bg-green-100 text-green-800 font-medium text-sm flex items-center gap-2 transition-colors ${!disabled ? 'cursor-pointer hover:bg-red-50 hover:border-red-300 hover:text-red-600' : ''}`}
+                        onClick={!disabled ? onRemove : undefined}
                         title="Click to remove"
                     >
                         <span>{droppedOption}</span>
@@ -126,6 +126,7 @@ export default function MatchingQuestion({
     startNumber = 1,
     answers = {},
     onAnswerChange,
+    disabled = false,
 }) {
     const [activeId, setActiveId] = useState(null);
 
@@ -218,6 +219,7 @@ export default function MatchingQuestion({
                                         key={`option-${index}`}
                                         id={`option-${index}`}
                                         isUsed={usedOptions.includes(option)}
+                                        disabled={disabled}
                                     >
                                         {option}
                                     </DraggableOption>
@@ -244,6 +246,7 @@ export default function MatchingQuestion({
                                             itemText={item.text}
                                             droppedOption={answers[questionId]}
                                             onRemove={() => handleRemoveAnswer(questionId)}
+                                            disabled={disabled}
                                         />
                                     );
                                 })}

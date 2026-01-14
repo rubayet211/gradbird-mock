@@ -18,6 +18,7 @@ export default function MultipleAnswerMCQ({
     questionNumber,
     answers,
     onAnswerChange,
+    disabled = false,
 }) {
     const {
         id,
@@ -114,7 +115,7 @@ export default function MultipleAnswerMCQ({
                                 flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all
                                 ${isSelected
                                     ? 'border-purple-600 bg-purple-50'
-                                    : isDisabled
+                                    : (isDisabled || disabled)
                                         ? 'border-gray-100 bg-gray-50 cursor-not-allowed opacity-50'
                                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                 }
@@ -125,7 +126,7 @@ export default function MultipleAnswerMCQ({
                                 <input
                                     type="checkbox"
                                     checked={isSelected}
-                                    disabled={isDisabled}
+                                    disabled={isDisabled || disabled}
                                     onChange={() => handleCheckboxChange(option.id)}
                                     className="sr-only"
                                 />

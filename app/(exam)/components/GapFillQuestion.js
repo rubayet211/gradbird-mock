@@ -18,6 +18,7 @@ export default function GapFillQuestion({
     startNumber,
     answers,
     onAnswerChange,
+    disabled = false,
 }) {
     const { instruction, questions } = questionGroup;
 
@@ -37,6 +38,7 @@ export default function GapFillQuestion({
                     questionNumber={startNumber + index}
                     answer={answers[question.id] || ''}
                     onAnswerChange={onAnswerChange}
+                    disabled={props.disabled}
                 />
             ))}
         </div>
@@ -186,11 +188,13 @@ function GapFillItem({
                                         value={blankValue}
                                         onChange={(e) => handleBlankChange(segment.index, e.target.value)}
                                         placeholder="..."
+                                        disabled={props.disabled}
                                         className={`
                                             min-w-[120px] max-w-[200px] px-3 py-1.5 
                                             border-b-2 bg-gray-50 rounded-t
                                             text-center font-medium
                                             focus:outline-none focus:bg-white transition-all
+                                            disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed
                                             ${isOverLimit
                                                 ? 'border-red-500 text-red-700 bg-red-50'
                                                 : blankValue

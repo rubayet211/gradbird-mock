@@ -29,6 +29,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
     const [questionStatus, setQuestionStatus] = useState(generateInitialQuestionStatus);
     const [isTimerRunning, setIsTimerRunning] = useState(true);
     const [isReviewOpen, setIsReviewOpen] = useState(false);
+    const [isExamEnded, setIsExamEnded] = useState(false);
 
     // Highlight and note state
     const [highlights, setHighlights] = useState([]);
@@ -101,6 +102,36 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
 
         return () => clearInterval(interval);
     }, [isTimerRunning, timeLeft]);
+
+    // Auto-submit when time runs out
+    useEffect(() => {
+        if (timeLeft === 0 && !isExamEnded) {
+            submitExam();
+        }
+    }, [timeLeft, isExamEnded]);
+
+    const submitExam = useCallback(async () => {
+        if (isExamEnded) return;
+
+        setIsExamEnded(true);
+        setIsTimerRunning(false);
+
+        try {
+            await fetch(`/api/test-session/${sessionId}/finish`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ answers }),
+            });
+
+            // Optional: Redirect to results page or show completion modal
+            // router.push(`/dashboard/results/${sessionId}`);
+        } catch (error) {
+            console.error('Failed to submit exam:', error);
+            // Even if API fails, UI should remain in ended state
+        }
+    }, [sessionId, answers, isExamEnded]);
 
     // Navigate to a specific question
     const goToQuestion = useCallback((index) => {
@@ -187,7 +218,10 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         addNote,
         removeNote,
         updateNote,
+        updateNote,
         sessionId,
+        isExamEnded,
+        submitExam,
     };
 
     return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

@@ -11,7 +11,7 @@ import React from 'react';
  * @param {Function} props.onAnswerChange - Handler for answer changes
  * @param {number} props.startNumber - The starting question number for this group
  */
-export default function ShortAnswerQuestion({ questionGroup, answers, onAnswerChange, startNumber }) {
+export default function ShortAnswerQuestion({ questionGroup, answers, onAnswerChange, startNumber, disabled = false }) {
     // Helper to count words
     const countWords = (text) => {
         if (!text) return 0;
@@ -66,8 +66,10 @@ export default function ShortAnswerQuestion({ questionGroup, answers, onAnswerCh
                                             id={question.id}
                                             value={currentValue}
                                             onChange={(e) => handleInputChange(question.id, e.target.value, limit)}
+                                            disabled={disabled}
                                             className={`
                                                 w-full px-4 py-2 rounded-lg border-2 outline-none transition-all
+                                                disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed
                                                 ${isOverLimit
                                                     ? 'border-red-300 focus:border-red-500 bg-red-50'
                                                     : 'border-gray-300 focus:border-blue-500 hover:border-blue-300'

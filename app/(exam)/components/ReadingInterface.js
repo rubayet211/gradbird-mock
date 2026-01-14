@@ -221,7 +221,8 @@ export default function ReadingInterface() {
         notes,
         addHighlight,
         removeHighlight,
-        addNote
+        addNote,
+        isExamEnded
     } = useExam();
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
     const [selectedRange, setSelectedRange] = useState(null);
@@ -577,6 +578,7 @@ export default function ReadingInterface() {
                                                     checked={answers[question.id] === option}
                                                     onChange={() => handleAnswerChange(question.id, option)}
                                                     className="sr-only"
+                                                    disabled={isExamEnded}
                                                 />
                                                 <span
                                                     className={`
@@ -615,6 +617,7 @@ export default function ReadingInterface() {
                         startNumber={14}
                         answers={answers}
                         onAnswerChange={handleAnswerChange}
+                        disabled={isExamEnded}
                     />
                 </div>
 
@@ -643,6 +646,7 @@ export default function ReadingInterface() {
                                 questionNumber={19 + index}
                                 answers={answers}
                                 onAnswerChange={handleAnswerChange}
+                                disabled={isExamEnded}
                             />
                         ))}
                     </div>
@@ -665,6 +669,7 @@ export default function ReadingInterface() {
                                 startNumber={21}
                                 answers={answers}
                                 onAnswerChange={handleAnswerChange}
+                                disabled={isExamEnded}
                             />
                         ))}
                     </div>
@@ -684,6 +689,7 @@ export default function ReadingInterface() {
                         startNumber={26}
                         answers={answers}
                         onAnswerChange={handleAnswerChange}
+                        disabled={isExamEnded}
                     />
                 </div>
 
@@ -701,6 +707,7 @@ export default function ReadingInterface() {
                         startNumber={30}
                         answers={answers}
                         onAnswerChange={handleAnswerChange}
+                        disabled={isExamEnded}
                     />
                 </div>
 

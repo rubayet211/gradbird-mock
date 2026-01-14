@@ -29,7 +29,12 @@ export default function ExamHeader() {
                     {/* Timer */}
                     <div className="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg">
                         <svg
-                            className="w-5 h-5 text-amber-400"
+                            className={`w-5 h-5 ${timeLeft <= 300
+                                    ? 'text-red-500 animate-pulse'
+                                    : timeLeft <= 600
+                                        ? 'text-red-400'
+                                        : 'text-amber-400'
+                                }`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -41,7 +46,14 @@ export default function ExamHeader() {
                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                         </svg>
-                        <span className="font-mono text-lg font-bold text-amber-400">
+                        <span
+                            className={`font-mono text-lg font-bold ${timeLeft <= 300
+                                    ? 'text-red-500 animate-pulse'
+                                    : timeLeft <= 600
+                                        ? 'text-red-400'
+                                        : 'text-amber-400'
+                                }`}
+                        >
                             {formatTime(timeLeft)}
                         </span>
                     </div>
