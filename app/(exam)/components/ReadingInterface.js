@@ -10,6 +10,7 @@ import MatchingQuestion from './MatchingQuestion';
 import MultipleAnswerMCQ from './MultipleAnswerMCQ';
 import GapFillQuestion from './GapFillQuestion';
 import DiagramLabeling from './DiagramLabeling';
+import ShortAnswerQuestion from './ShortAnswerQuestion';
 
 // Sample IELTS Reading Passage
 const READING_PASSAGE = `
@@ -179,6 +180,36 @@ const DIAGRAM_LABELING_QUESTIONS = {
         { id: 'dl-1-q2', x: 75, y: 25, label: 'Part B' },
         { id: 'dl-1-q3', x: 50, y: 60, label: 'Part C' },
         { id: 'dl-1-q4', x: 30, y: 80, label: 'Part D' },
+    ]
+};
+
+// Sample Short Answer questions for IELTS Reading
+const SHORT_ANSWER_QUESTIONS = {
+    id: 'sa-1',
+    type: 'ShortAnswer',
+    instruction: 'Answer the questions below. Choose NO MORE THAN THREE WORDS from the passage for each answer.',
+    wordLimitDescription: 'Write NO MORE THAN THREE WORDS',
+    questions: [
+        {
+            id: 'sa-1-q1',
+            text: 'What colour pattern makes the monarch butterfly easy to identify?',
+            wordLimit: 3
+        },
+        {
+            id: 'sa-1-q2',
+            text: 'What do monarchs use to help them fly and save energy?',
+            wordLimit: 3
+        },
+        {
+            id: 'sa-1-q3',
+            text: 'Which body part contains the monarch\'s internal magnetic compass?',
+            wordLimit: 1
+        },
+        {
+            id: 'sa-1-q4',
+            text: 'What type of forests do monarchs inhabit in Mexico?',
+            wordLimit: 2
+        }
     ]
 };
 
@@ -651,6 +682,23 @@ export default function ReadingInterface() {
                     <DiagramLabeling
                         questionGroup={DIAGRAM_LABELING_QUESTIONS}
                         startNumber={26}
+                        answers={answers}
+                        onAnswerChange={handleAnswerChange}
+                    />
+                </div>
+
+                {/* Short Answer Questions Section */}
+                <div className="mt-10 pt-6 border-t-2 border-gray-300">
+                    <div className="mb-6 pb-4 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800">Questions 30-33</h2>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Answer the questions below.
+                        </p>
+                    </div>
+
+                    <ShortAnswerQuestion
+                        questionGroup={SHORT_ANSWER_QUESTIONS}
+                        startNumber={30}
                         answers={answers}
                         onAnswerChange={handleAnswerChange}
                     />
