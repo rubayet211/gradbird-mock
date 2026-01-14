@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useExam } from '../contexts/ExamContext';
 import ResizableSplitPane from './ResizableSplitPane';
 import ContextMenu from './ContextMenu';
 import NoteModal from './NoteModal';
+import NoteMarginIcon from './NoteMarginIcon';
 
 // Sample IELTS Reading Passage
 const READING_PASSAGE = `
@@ -87,6 +88,7 @@ export default function ReadingInterface() {
     const passageRef = useRef(null);
     const contentRef = useRef(null);
     const [isRestored, setIsRestored] = useState(false);
+    const [notePositions, setNotePositions] = useState({});
 
     // Restore highlights from context on mount
     useEffect(() => {
@@ -242,13 +244,32 @@ export default function ReadingInterface() {
         const selectedText = selectedRange.toString();
         if (!selectedText) return;
 
-        // Create highlight and note data
+        // Create highlight and note data with position
         const highlightId = Date.now();
+
+        // Get scroll position for margin icon placement
+        const rangeRect = selectedRange.getBoundingClientRect();
+        const passageRect = passageRef.current?.getBoundingClientRect();
+        const scrollTop = passageRef.current?.scrollTop || 0;
+        const topOffset = rangeRect.top - (passageRect?.top || 0) + scrollTop;
+
         const newNote = {
             id: highlightId,
             text: selectedText,
             note: noteText,
+            passageId: 'passage-1',
+            position: {
+                topOffset: topOffset,
+                scrollTop: scrollTop
+            },
+            createdAt: Date.now()
         };
+
+        // Store position for margin icon
+        setNotePositions(prev => ({
+            ...prev,
+            [highlightId]: topOffset
+        }));
 
         // Wrap the selection in a highlight span with note indicator
         try {
@@ -293,9 +314,37 @@ export default function ReadingInterface() {
             onContextMenu={handleContextMenu}
             onClick={handleHighlightClick}
         >
+            {/* Margin Note Icons */}
+            <div className="absolute left-2 top-0 w-8 h-full pointer-events-auto z-20">
+                {notes.map((note) => {
+                    const topPos = notePositions[note.id] || note.position?.topOffset || 0;
+                    if (topPos === 0) return null;
+                    return (
+                        <NoteMarginIcon
+                            key={note.id}
+                            note={note}
+                            topOffset={topPos + 24} // Add 24px for header padding
+                            onClick={() => {
+                                // Scroll to the highlighted text
+                                const highlightEl = contentRef.current?.querySelector(
+                                    `[data-highlight-id="${note.id}"]`
+                                );
+                                if (highlightEl) {
+                                    highlightEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    // Flash effect
+                                    highlightEl.classList.add('ring-2', 'ring-amber-400');
+                                    setTimeout(() => {
+                                        highlightEl.classList.remove('ring-2', 'ring-amber-400');
+                                    }, 1500);
+                                }
+                            }}
+                        />
+                    );
+                })}
+            </div>
 
             {/* Passage Content */}
-            <div className="p-6">
+            <div className="p-6 pl-12">
                 <div className="mb-4 pb-4 border-b border-gray-200">
                     <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                         Reading Passage 1

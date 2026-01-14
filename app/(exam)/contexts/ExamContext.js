@@ -77,6 +77,13 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         setNotes((prev) => prev.filter((n) => n.id !== noteId));
     }, []);
 
+    // Update an existing note
+    const updateNote = useCallback((noteId, updates) => {
+        setNotes((prev) => prev.map((n) =>
+            n.id === noteId ? { ...n, ...updates } : n
+        ));
+    }, []);
+
     // Timer countdown effect
     useEffect(() => {
         if (!isTimerRunning || timeLeft <= 0) return;
@@ -171,6 +178,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         removeHighlight,
         addNote,
         removeNote,
+        updateNote,
         sessionId,
     };
 
