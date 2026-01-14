@@ -45,11 +45,29 @@ export async function GET() {
                     title: 'IELTS Academic Mock Test 1',
                     description: 'Full IELTS Academic practice test with Reading, Listening, and Writing sections.',
                     isActive: true,
+                    readingContent: {
+                        answers: {
+                            '1': 'FALSE', '2': 'TRUE', '3': 'FALSE', '4': 'TRUE', '5': 'FALSE',
+                            '6': 'NOT GIVEN', '7': 'TRUE', '8': 'TRUE', '9': 'FALSE', '10': 'TRUE',
+                            '11': 'FALSE', '12': 'TRUE', '13': 'TRUE'
+                        }
+                    },
+                    listeningContent: {
+                        answers: {
+                            '1': 'A', '2': 'B', '3': 'C', '4': 'A', '5': 'B',
+                            '6': 'C', '7': 'A', '8': 'B', '9': 'C', '10': 'A'
+                        }
+                    }
                 },
                 {
                     title: 'IELTS Academic Mock Test 2',
                     description: 'Comprehensive IELTS Academic practice covering all sections.',
                     isActive: true,
+                    readingContent: {
+                        answers: {
+                            '1': 'TRUE', '2': 'FALSE', '3': 'TRUE'
+                        }
+                    }
                 },
                 {
                     title: 'IELTS Academic Mock Test 3',
