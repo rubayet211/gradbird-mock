@@ -30,6 +30,35 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
     const [isTimerRunning, setIsTimerRunning] = useState(true);
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [isExamEnded, setIsExamEnded] = useState(false);
+    const [isHidden, setIsHidden] = useState(false);
+
+    // Log security events to server
+    const logSecurityEvent = useCallback(async (eventType) => {
+        if (!sessionId) return;
+        try {
+            await fetch('/api/exam/log-security', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    sessionId,
+                    eventType,
+                    timestamp: new Date().toISOString(),
+                }),
+            });
+        } catch (error) {
+            console.error('Failed to log security event:', error);
+        }
+    }, [sessionId]);
+
+    const toggleHideScreen = useCallback(() => {
+        setIsHidden((prev) => {
+            const newState = !prev;
+            logSecurityEvent(newState ? 'SCREEN_HIDDEN' : 'SCREEN_RESUMED');
+            return newState;
+        });
+    }, [logSecurityEvent]);
 
     // Highlight and note state
     const [highlights, setHighlights] = useState([]);
@@ -222,6 +251,10 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         sessionId,
         isExamEnded,
         submitExam,
+        // Privacy Mode
+        isHidden,
+        toggleHideScreen,
+        logSecurityEvent,
     };
 
     return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;
