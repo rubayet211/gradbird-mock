@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useExam } from '../contexts/ExamContext';
+import ResizableSplitPane from './ResizableSplitPane';
 
 // Sample IELTS Reading Passage
 const READING_PASSAGE = `
@@ -150,154 +151,165 @@ export default function ReadingInterface() {
         setAnswer(questionId, value);
     };
 
-    return (
-        <div className="flex-1 flex overflow-hidden">
-            {/* Left Pane - Reading Passage */}
-            <div
-                ref={passageRef}
-                className="w-1/2 h-full overflow-y-auto bg-white border-r border-gray-300 relative select-text"
-                onMouseUp={handleMouseUp}
-                onMouseDown={handleMouseDown}
-            >
-                {/* Highlight Tooltip */}
-                {tooltip.visible && (
-                    <div
-                        className="highlight-tooltip absolute z-50 transform -translate-x-1/2 -translate-y-full"
-                        style={{ left: tooltip.x, top: tooltip.y }}
+    // Left pane content - Reading Passage
+    const leftPaneContent = (
+        <div
+            ref={passageRef}
+            className="h-full overflow-y-auto bg-white relative select-text"
+            onMouseUp={handleMouseUp}
+            onMouseDown={handleMouseDown}
+        >
+            {/* Highlight Tooltip */}
+            {tooltip.visible && (
+                <div
+                    className="highlight-tooltip absolute z-50 transform -translate-x-1/2 -translate-y-full"
+                    style={{ left: tooltip.x, top: tooltip.y }}
+                >
+                    <button
+                        onClick={handleHighlight}
+                        className="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow-lg hover:bg-gray-800 transition-colors flex items-center gap-1.5"
                     >
-                        <button
-                            onClick={handleHighlight}
-                            className="bg-gray-900 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow-lg hover:bg-gray-800 transition-colors flex items-center gap-1.5"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                            Highlight
-                        </button>
-                        <div className="absolute left-1/2 transform -translate-x-1/2 top-full">
-                            <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-gray-900"></div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Passage Content */}
-                <div className="p-6">
-                    <div className="mb-4 pb-4 border-b border-gray-200">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                            Reading Passage 1
-                        </span>
-                        <p className="mt-3 text-sm text-gray-500">
-                            You should spend about 20 minutes on Questions 1-13, which are based on the reading passage below.
-                        </p>
-                    </div>
-
-                    <div ref={contentRef} className="prose prose-gray max-w-none">
-                        {READING_PASSAGE.split('\n\n').map((paragraph, index) => {
-                            if (index === 0) return null; // Skip empty first line
-                            if (index === 1) {
-                                return (
-                                    <h1 key={index} className="text-2xl font-bold text-gray-900 mb-6">
-                                        {paragraph}
-                                    </h1>
-                                );
-                            }
-                            // Check if paragraph is a heading (short and no period at end)
-                            if (paragraph.length < 50 && !paragraph.endsWith('.')) {
-                                return (
-                                    <h2 key={index} className="text-lg font-semibold text-gray-800 mt-6 mb-3">
-                                        {paragraph}
-                                    </h2>
-                                );
-                            }
-                            return (
-                                <p key={index} className="text-gray-700 leading-relaxed mb-4">
-                                    {paragraph}
-                                </p>
-                            );
-                        })}
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        Highlight
+                    </button>
+                    <div className="absolute left-1/2 transform -translate-x-1/2 top-full">
+                        <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-gray-900"></div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* Right Pane - Questions */}
-            <div className="w-1/2 h-full overflow-y-auto bg-gray-50">
-                <div className="p-6">
-                    {/* Questions Header */}
-                    <div className="mb-6 pb-4 border-b border-gray-200">
-                        <h2 className="text-xl font-bold text-gray-800">Questions 1-13</h2>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Do the following statements agree with the information given in the reading passage?
-                        </p>
-                        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
-                            <p className="text-sm text-amber-800 font-medium mb-2">Write:</p>
-                            <ul className="text-sm text-amber-700 space-y-1">
-                                <li><strong>TRUE</strong> if the statement agrees with the information</li>
-                                <li><strong>FALSE</strong> if the statement contradicts the information</li>
-                                <li><strong>NOT GIVEN</strong> if there is no information on this</li>
-                            </ul>
-                        </div>
-                    </div>
+            {/* Passage Content */}
+            <div className="p-6">
+                <div className="mb-4 pb-4 border-b border-gray-200">
+                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                        Reading Passage 1
+                    </span>
+                    <p className="mt-3 text-sm text-gray-500">
+                        You should spend about 20 minutes on Questions 1-13, which are based on the reading passage below.
+                    </p>
+                </div>
 
-                    {/* Questions List */}
-                    <div className="space-y-6">
-                        {READING_QUESTIONS.map((question) => (
-                            <div
-                                key={question.id}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 transition-all hover:shadow-md"
-                            >
-                                <div className="flex gap-4">
-                                    <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                                        {question.id}
-                                    </span>
-                                    <div className="flex-1">
-                                        <p className="text-gray-800 font-medium mb-4">{question.text}</p>
-                                        <div className="flex gap-4">
-                                            {['TRUE', 'FALSE', 'NOT GIVEN'].map((option) => (
-                                                <label
-                                                    key={option}
-                                                    className={`
-                                                        flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer transition-all
-                                                        ${answers[question.id] === option
-                                                            ? 'border-blue-600 bg-blue-50 text-blue-700'
-                                                            : 'border-gray-200 hover:border-gray-300 text-gray-600'
-                                                        }
-                                                    `}
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name={`question-${question.id}`}
-                                                        value={option}
-                                                        checked={answers[question.id] === option}
-                                                        onChange={() => handleAnswerChange(question.id, option)}
-                                                        className="sr-only"
-                                                    />
-                                                    <span
-                                                        className={`
-                                                            w-4 h-4 rounded-full border-2 flex items-center justify-center
-                                                            ${answers[question.id] === option
-                                                                ? 'border-blue-600 bg-blue-600'
-                                                                : 'border-gray-400'
-                                                            }
-                                                        `}
-                                                    >
-                                                        {answers[question.id] === option && (
-                                                            <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                                                        )}
-                                                    </span>
-                                                    <span className="text-sm font-medium">{option}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Bottom spacing */}
-                    <div className="h-8"></div>
+                <div ref={contentRef} className="prose prose-gray max-w-none">
+                    {READING_PASSAGE.split('\n\n').map((paragraph, index) => {
+                        if (index === 0) return null; // Skip empty first line
+                        if (index === 1) {
+                            return (
+                                <h1 key={index} className="text-2xl font-bold text-gray-900 mb-6">
+                                    {paragraph}
+                                </h1>
+                            );
+                        }
+                        // Check if paragraph is a heading (short and no period at end)
+                        if (paragraph.length < 50 && !paragraph.endsWith('.')) {
+                            return (
+                                <h2 key={index} className="text-lg font-semibold text-gray-800 mt-6 mb-3">
+                                    {paragraph}
+                                </h2>
+                            );
+                        }
+                        return (
+                            <p key={index} className="text-gray-700 leading-relaxed mb-4">
+                                {paragraph}
+                            </p>
+                        );
+                    })}
                 </div>
             </div>
         </div>
     );
+
+    // Right pane content - Questions
+    const rightPaneContent = (
+        <div className="h-full overflow-y-auto bg-gray-50">
+            <div className="p-6">
+                {/* Questions Header */}
+                <div className="mb-6 pb-4 border-b border-gray-200">
+                    <h2 className="text-xl font-bold text-gray-800">Questions 1-13</h2>
+                    <p className="mt-2 text-sm text-gray-600">
+                        Do the following statements agree with the information given in the reading passage?
+                    </p>
+                    <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <p className="text-sm text-amber-800 font-medium mb-2">Write:</p>
+                        <ul className="text-sm text-amber-700 space-y-1">
+                            <li><strong>TRUE</strong> if the statement agrees with the information</li>
+                            <li><strong>FALSE</strong> if the statement contradicts the information</li>
+                            <li><strong>NOT GIVEN</strong> if there is no information on this</li>
+                        </ul>
+                    </div>
+                </div>
+
+                {/* Questions List */}
+                <div className="space-y-6">
+                    {READING_QUESTIONS.map((question) => (
+                        <div
+                            key={question.id}
+                            className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 transition-all hover:shadow-md"
+                        >
+                            <div className="flex gap-4">
+                                <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                    {question.id}
+                                </span>
+                                <div className="flex-1">
+                                    <p className="text-gray-800 font-medium mb-4">{question.text}</p>
+                                    <div className="flex gap-4">
+                                        {['TRUE', 'FALSE', 'NOT GIVEN'].map((option) => (
+                                            <label
+                                                key={option}
+                                                className={`
+                                                    flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer transition-all
+                                                    ${answers[question.id] === option
+                                                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                                        : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                                                    }
+                                                `}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name={`question-${question.id}`}
+                                                    value={option}
+                                                    checked={answers[question.id] === option}
+                                                    onChange={() => handleAnswerChange(question.id, option)}
+                                                    className="sr-only"
+                                                />
+                                                <span
+                                                    className={`
+                                                        w-4 h-4 rounded-full border-2 flex items-center justify-center
+                                                        ${answers[question.id] === option
+                                                            ? 'border-blue-600 bg-blue-600'
+                                                            : 'border-gray-400'
+                                                        }
+                                                    `}
+                                                >
+                                                    {answers[question.id] === option && (
+                                                        <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                                                    )}
+                                                </span>
+                                                <span className="text-sm font-medium">{option}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Bottom spacing */}
+                <div className="h-8"></div>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="flex-1 flex overflow-hidden">
+            <ResizableSplitPane
+                storageKey="reading-panel-sizes"
+                leftPanel={leftPaneContent}
+                rightPanel={rightPaneContent}
+            />
+        </div>
+    );
 }
+

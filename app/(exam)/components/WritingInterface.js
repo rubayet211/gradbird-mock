@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import ResizableSplitPane from './ResizableSplitPane';
 
 // Sample IELTS Writing Task 1 Prompt
 const TASK1_PROMPT = {
@@ -80,112 +81,122 @@ export default function WritingInterface() {
         return 'text-gray-600';
     };
 
+    // Left pane content - Prompt & Chart
+    const leftPaneContent = (
+        <div className="h-full overflow-y-auto bg-white">
+            <div className="p-6">
+                {/* Task Header */}
+                <div className="mb-4 pb-4 border-b border-gray-200">
+                    <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+                        {currentPrompt.title}
+                    </span>
+                    <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
+                        <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {currentPrompt.time}
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Minimum {currentPrompt.minWords} words
+                        </span>
+                    </div>
+                </div>
+
+                {/* Instructions */}
+                <div className="prose prose-gray max-w-none">
+                    <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3">Instructions</h3>
+                        <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                            {currentPrompt.instructions}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Chart Placeholder for Task 1 */}
+                {currentPrompt.hasChart && (
+                    <div className="mt-6">
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300 p-8">
+                            <div className="text-center">
+                                <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                <p className="text-gray-500 font-medium">{currentPrompt.chartDescription}</p>
+                                <p className="text-gray-400 text-sm mt-2">[Chart/Graph will be displayed here]</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    // Right pane content - Text Editor
+    const rightPaneContent = (
+        <div className="h-full flex flex-col bg-gray-50">
+            {/* Editor Header */}
+            <div className="px-6 py-4 bg-white border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-800">Your Response</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                    Write your answer in the space below. Spell check is disabled.
+                </p>
+            </div>
+
+            {/* Text Area */}
+            <div className="flex-1 p-6 overflow-hidden">
+                <textarea
+                    value={currentText}
+                    onChange={handleTextChange}
+                    onKeyDown={handleKeyDown}
+                    spellCheck="false"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    autoComplete="off"
+                    placeholder="Start writing your response here..."
+                    className="w-full h-full resize-none rounded-xl border-2 border-gray-200 bg-white p-5 text-gray-800 leading-relaxed text-base focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-gray-400 font-[system-ui]"
+                    style={{
+                        fontFamily: "'Georgia', 'Times New Roman', serif",
+                        fontSize: '16px',
+                        lineHeight: '1.8',
+                    }}
+                />
+            </div>
+
+            {/* Word Counter */}
+            <div className="px-6 py-3 bg-white border-t border-gray-200 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <span className={`font-semibold ${getWordCountColor()}`}>
+                        Word count: {wordCount}
+                    </span>
+                    {wordCount > 0 && wordCount < currentPrompt.minWords && (
+                        <span className="text-sm text-gray-400">
+                            ({currentPrompt.minWords - wordCount} more words needed)
+                        </span>
+                    )}
+                    {wordCount >= currentPrompt.minWords && (
+                        <span className="flex items-center gap-1 text-sm text-green-600">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            Minimum reached
+                        </span>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 flex overflow-hidden">
-                {/* Left Pane - Prompt & Chart */}
-                <div className="w-1/2 h-full overflow-y-auto bg-white border-r border-gray-300">
-                    <div className="p-6">
-                        {/* Task Header */}
-                        <div className="mb-4 pb-4 border-b border-gray-200">
-                            <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
-                                {currentPrompt.title}
-                            </span>
-                            <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
-                                <span className="flex items-center gap-1">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    {currentPrompt.time}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    Minimum {currentPrompt.minWords} words
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Instructions */}
-                        <div className="prose prose-gray max-w-none">
-                            <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-3">Instructions</h3>
-                                <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-                                    {currentPrompt.instructions}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Chart Placeholder for Task 1 */}
-                        {currentPrompt.hasChart && (
-                            <div className="mt-6">
-                                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300 p-8">
-                                    <div className="text-center">
-                                        <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                        </svg>
-                                        <p className="text-gray-500 font-medium">{currentPrompt.chartDescription}</p>
-                                        <p className="text-gray-400 text-sm mt-2">[Chart/Graph will be displayed here]</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Right Pane - Text Editor */}
-                <div className="w-1/2 h-full flex flex-col bg-gray-50">
-                    {/* Editor Header */}
-                    <div className="px-6 py-4 bg-white border-b border-gray-200">
-                        <h2 className="text-lg font-semibold text-gray-800">Your Response</h2>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Write your answer in the space below. Spell check is disabled.
-                        </p>
-                    </div>
-
-                    {/* Text Area */}
-                    <div className="flex-1 p-6 overflow-hidden">
-                        <textarea
-                            value={currentText}
-                            onChange={handleTextChange}
-                            onKeyDown={handleKeyDown}
-                            spellCheck="false"
-                            autoCorrect="off"
-                            autoCapitalize="off"
-                            autoComplete="off"
-                            placeholder="Start writing your response here..."
-                            className="w-full h-full resize-none rounded-xl border-2 border-gray-200 bg-white p-5 text-gray-800 leading-relaxed text-base focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-gray-400 font-[system-ui]"
-                            style={{
-                                fontFamily: "'Georgia', 'Times New Roman', serif",
-                                fontSize: '16px',
-                                lineHeight: '1.8',
-                            }}
-                        />
-                    </div>
-
-                    {/* Word Counter */}
-                    <div className="px-6 py-3 bg-white border-t border-gray-200 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <span className={`font-semibold ${getWordCountColor()}`}>
-                                Word count: {wordCount}
-                            </span>
-                            {wordCount > 0 && wordCount < currentPrompt.minWords && (
-                                <span className="text-sm text-gray-400">
-                                    ({currentPrompt.minWords - wordCount} more words needed)
-                                </span>
-                            )}
-                            {wordCount >= currentPrompt.minWords && (
-                                <span className="flex items-center gap-1 text-sm text-green-600">
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                    </svg>
-                                    Minimum reached
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                <ResizableSplitPane
+                    storageKey="writing-panel-sizes"
+                    leftPanel={leftPaneContent}
+                    rightPanel={rightPaneContent}
+                />
             </div>
 
             {/* Task Switching Tabs */}
@@ -239,3 +250,4 @@ export default function WritingInterface() {
         </div>
     );
 }
+
