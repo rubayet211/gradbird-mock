@@ -5,20 +5,48 @@ const MockTestSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please provide a title for this mock test.'],
     },
-    description: {
+    type: {
         type: String,
+        enum: ['Academic', 'General Training'],
+        required: [true, 'Please specify the test type.'],
     },
-    readingContent: {
-        type: mongoose.Schema.Types.Mixed,
-        default: {},
+    listening: {
+        audioUrl: String,
+        questions: [{
+            id: String,
+            type: {
+                type: String,
+                enum: ['MCQ', 'GapFill', 'Matching', 'Map', 'ShortAnswer'], // Extended types
+            },
+            text: String, // For question stem
+            options: [String], // For MCQ
+            correctAnswer: String,
+        }],
     },
-    listeningContent: {
-        type: mongoose.Schema.Types.Mixed,
-        default: {},
+    reading: {
+        sections: [{
+            title: String,
+            passageText: String, // Rich text or HTML
+            questions: [{
+                id: String,
+                type: {
+                    type: String,
+                    enum: ['MCQ', 'GapFill', 'TrueFalse', 'Matching', 'ShortAnswer'],
+                },
+                text: String,
+                options: [String],
+                correctAnswer: String,
+            }],
+        }],
     },
-    writingContent: {
-        type: mongoose.Schema.Types.Mixed,
-        default: {},
+    writing: {
+        task1: {
+            promptText: String,
+            imageUrls: [String],
+        },
+        task2: {
+            promptText: String,
+        },
     },
     isActive: {
         type: Boolean,
