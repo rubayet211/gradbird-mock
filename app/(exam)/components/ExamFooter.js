@@ -11,24 +11,10 @@ export default function ExamFooter() {
         goToNextQuestion,
         goToPrevQuestion,
         toggleFlag,
+        answers,
     } = useExam();
 
     const currentQuestionId = currentQuestionIndex + 1;
-
-    // Get status color for a question
-    const getStatusColor = (status, isActive) => {
-        if (isActive) {
-            return 'bg-blue-600 text-white border-blue-600';
-        }
-        switch (status) {
-            case 'answered':
-                return 'bg-green-600 text-white border-green-600';
-            case 'flagged':
-                return 'bg-amber-500 text-white border-amber-500';
-            default:
-                return 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600';
-        }
-    };
 
     return (
         <footer className="bg-gray-900 text-white px-4 py-3 select-none">
@@ -36,19 +22,36 @@ export default function ExamFooter() {
             <div className="flex items-center gap-3 mb-3">
                 <div className="flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
                     <div className="flex gap-2 pb-2">
-                        {questionStatus.map((question, index) => (
-                            <button
-                                key={question.id}
-                                onClick={() => goToQuestion(index)}
-                                className={`
-                  flex-shrink-0 w-10 h-10 rounded-lg border-2 font-medium
-                  transition-all duration-200 flex items-center justify-center
-                  ${getStatusColor(question.status, index === currentQuestionIndex)}
-                `}
-                            >
-                                {question.id}
-                            </button>
-                        ))}
+                        {questionStatus.map((question, index) => {
+                            const isAnswered = !!answers[question.id];
+                            const isFlagged = question.status === 'flagged';
+                            const isActive = index === currentQuestionIndex;
+
+                            return (
+                                <button
+                                    key={question.id}
+                                    onClick={() => goToQuestion(index)}
+                                    className={`
+                                        flex-shrink-0 w-10 h-10 rounded border font-medium relative
+                                        transition-all duration-200 flex items-center justify-center
+                                        ${isActive
+                                            ? 'bg-blue-700 border-blue-500 text-white ring-2 ring-blue-400 ring-offset-1 ring-offset-gray-900 z-10'
+                                            : 'bg-gray-800 text-gray-300 border-gray-600 hover:bg-gray-700'
+                                        }
+                                        ${isAnswered ? '!border-b-4 !border-b-blue-500' : ''}
+                                    `}
+                                >
+                                    {isFlagged && (
+                                        <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white rounded-full p-0.5 shadow-sm z-20">
+                                            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                                                <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z" />
+                                            </svg>
+                                        </div>
+                                    )}
+                                    {question.id}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
