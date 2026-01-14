@@ -17,6 +17,10 @@ const UserSchema = new mongoose.Schema({
         enum: ['student', 'admin'],
         default: 'student',
     },
+    mocksAvailable: {
+        type: Number,
+        default: 0,
+    },
     createdAt: {
         type: Date,
         default: Date.now,
