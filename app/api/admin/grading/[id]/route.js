@@ -3,45 +3,8 @@ import dbConnect from '@/lib/dbConnect';
 import TestSession from '@/models/TestSession';
 import User from '@/models/User';
 import MockTest from '@/models/MockTest';
-
-function calculateOverallBand(scores) {
-    const { reading, listening, writing, speaking } = scores;
-    if (reading == null || listening == null || writing == null || speaking == null) {
-        return null;
-    }
-
-    const average = (reading + listening + writing + speaking) / 4;
-
-    // IELTS Rounding:
-    // .25 -> .5
-    // .75 -> next whole number
-    // Basically, we want to floor to nearest 0.5, then add 0.5 if remainder >= 0.25 ?
-    // Examples:
-    // 6.25 -> 6.5
-    // 6.125 -> 6.0
-    // 6.75 -> 7.0
-    // 6.625 -> 6.5
-
-    // Logic: 
-    // fractional part: 
-    // < 0.25 -> 0
-    // >= 0.25 && < 0.75 -> 0.5
-    // >= 0.75 -> 1.0
-
-    const whole = Math.floor(average);
-    const fraction = average - whole;
-
-    let roundedFraction = 0;
-    if (fraction < 0.25) {
-        roundedFraction = 0;
-    } else if (fraction < 0.75) {
-        roundedFraction = 0.5;
-    } else {
-        roundedFraction = 1.0;
-    }
-
-    return whole + roundedFraction;
-}
+import { roundToIELTSBand } from '@/lib/grading';
+import { auth } from '@/auth';
 
 export async function GET(req, { params }) {
     try {
@@ -65,10 +28,23 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
     try {
+        const authSession = await auth();
+        if (!authSession || !authSession.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         await dbConnect();
         const { id } = params;
         const body = await req.json();
-        const { writingScore, speakingScore, feedback } = body;
+        const {
+            writingScore,
+            speakingScore,
+            feedback,
+            // New detailed scoring fields
+            writingDetails,
+            speakingDetails,
+            detailedFeedback
+        } = body;
 
         const session = await TestSession.findById(id);
 
@@ -76,18 +52,66 @@ export async function PUT(req, { params }) {
             return NextResponse.json({ error: 'Session not found' }, { status: 404 });
         }
 
-        // Update scores
-        if (writingScore !== undefined) session.scores.writing = parseFloat(writingScore);
-        if (speakingScore !== undefined) session.scores.speaking = parseFloat(speakingScore);
+        // Update Writing score - support both simple and detailed
+        if (writingScore !== undefined) {
+            session.scores.writing = parseFloat(writingScore);
+        } else if (writingDetails) {
+            // Calculate writing score from detailed rubric
+            const { taskAchievement, coherenceCohesion, lexicalResource, grammaticalRange } = writingDetails;
+            session.writingDetails = writingDetails;
 
-        // Update feedback
-        if (feedback !== undefined) session.feedback = feedback;
-
-        // Recalculate overall
-        const newOverall = calculateOverallBand(session.scores);
-        if (newOverall !== null) {
-            session.scores.overall = newOverall;
+            if (taskAchievement && coherenceCohesion && lexicalResource && grammaticalRange) {
+                const avg = (
+                    parseFloat(taskAchievement) +
+                    parseFloat(coherenceCohesion) +
+                    parseFloat(lexicalResource) +
+                    parseFloat(grammaticalRange)
+                ) / 4;
+                session.scores.writing = roundToIELTSBand(avg);
+            }
         }
+
+        // Update Speaking score - support both simple and detailed
+        if (speakingScore !== undefined) {
+            session.scores.speaking = parseFloat(speakingScore);
+        } else if (speakingDetails) {
+            // Calculate speaking score from detailed rubric
+            const { fluencyCoherence, lexicalResource, grammaticalRange, pronunciation } = speakingDetails;
+            session.speakingDetails = speakingDetails;
+
+            if (fluencyCoherence && lexicalResource && grammaticalRange && pronunciation) {
+                const avg = (
+                    parseFloat(fluencyCoherence) +
+                    parseFloat(lexicalResource) +
+                    parseFloat(grammaticalRange) +
+                    parseFloat(pronunciation)
+                ) / 4;
+                session.scores.speaking = roundToIELTSBand(avg);
+            }
+        }
+
+        // Update detailed feedback
+        if (detailedFeedback) {
+            session.detailedFeedback = {
+                ...session.detailedFeedback,
+                ...detailedFeedback
+            };
+        }
+
+        // Update general feedback
+        if (feedback !== undefined) {
+            session.feedback = feedback;
+        }
+
+        // Recalculate overall using centralized IELTS rounding
+        const { reading, listening, writing, speaking } = session.scores;
+        if (reading != null && listening != null && writing != null && speaking != null) {
+            session.scores.overall = roundToIELTSBand((reading + listening + writing + speaking) / 4);
+        }
+
+        // Track grading metadata
+        session.gradedAt = new Date();
+        session.gradedBy = authSession.user.id;
 
         await session.save();
 

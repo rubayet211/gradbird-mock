@@ -31,12 +31,51 @@ const TestSessionSchema = new mongoose.Schema({
     scores: {
         reading: { type: Number },
         listening: { type: Number },
-        writing: { type: Number },
-        speaking: { type: Number },
+        // Writing can be Number (legacy) or detailed object (new)
+        writing: { type: mongoose.Schema.Types.Mixed },
+        // Speaking can be Number (legacy) or detailed object (new)
+        speaking: { type: mongoose.Schema.Types.Mixed },
         overall: { type: Number },
+    },
+    // Detailed scoring breakdown for IELTS rubric
+    writingDetails: {
+        taskAchievement: { type: Number },
+        coherenceCohesion: { type: Number },
+        lexicalResource: { type: Number },
+        grammaticalRange: { type: Number },
+    },
+    speakingDetails: {
+        fluencyCoherence: { type: Number },
+        lexicalResource: { type: Number },
+        grammaticalRange: { type: Number },
+        pronunciation: { type: Number },
+    },
+    // Detailed feedback per section
+    detailedFeedback: {
+        writing: {
+            taskAchievement: { type: String },
+            coherenceCohesion: { type: String },
+            lexicalResource: { type: String },
+            grammaticalRange: { type: String },
+            overall: { type: String },
+        },
+        speaking: {
+            fluencyCoherence: { type: String },
+            lexicalResource: { type: String },
+            grammaticalRange: { type: String },
+            pronunciation: { type: String },
+            overall: { type: String },
+        },
     },
     feedback: {
         type: String,
+    },
+    gradedAt: {
+        type: Date,
+    },
+    gradedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
     },
 });
 

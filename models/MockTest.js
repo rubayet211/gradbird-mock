@@ -11,16 +11,32 @@ const MockTestSchema = new mongoose.Schema({
         required: [true, 'Please specify the test type.'],
     },
     listening: {
-        audioUrl: String,
-        questions: [{
-            id: String,
-            type: {
-                type: String,
-                enum: ['MCQ', 'GapFill', 'Matching', 'Map', 'ShortAnswer'], // Extended types
-            },
-            text: String, // For question stem
-            options: [String], // For MCQ
-            correctAnswer: String,
+        parts: [{
+            partNumber: { type: Number, required: true },
+            title: String,
+            audioUrl: { type: String, required: true },
+            transcript: String,
+            questions: [{
+                id: String,
+                type: {
+                    type: String,
+                    enum: ['MCQ', 'GapFill', 'Matching', 'MapLabeling', 'ShortAnswer', 'TrueFalse'],
+                },
+                text: String,
+                options: [String],
+                correctAnswer: mongoose.Schema.Types.Mixed, // String or Array for multiple answers
+                // For GapFill
+                wordLimit: Number,
+                // For MapLabeling
+                imageUrl: String,
+                dropZones: [{
+                    id: String,
+                    x: Number, // percentage
+                    y: Number, // percentage
+                    label: String,
+                }],
+                labels: [String], // draggable labels
+            }],
         }],
     },
     reading: {
@@ -31,7 +47,7 @@ const MockTestSchema = new mongoose.Schema({
                 id: String,
                 type: {
                     type: String,
-                    enum: ['MCQ', 'GapFill', 'TrueFalse', 'Matching', 'ShortAnswer'],
+                    enum: ['MCQ', 'GapFill', 'TrueFalse', 'Matching', 'ShortAnswer', 'MultipleAnswer', 'DiagramLabeling'],
                 },
                 text: String,
                 options: [String],
@@ -46,7 +62,39 @@ const MockTestSchema = new mongoose.Schema({
         },
         task2: {
             promptText: String,
+            imageUrls: [String],
         },
+    },
+    speaking: {
+        part1: {
+            title: String,
+            duration: String,
+            description: String,
+            interviewTopics: [{
+                topic: String,
+                questions: [String]
+            }]
+        },
+        part2: {
+            title: String,
+            duration: String,
+            description: String,
+            preparationTime: Number,
+            speakingTime: Number,
+            cueCard: {
+                topic: String,
+                prompts: [String]
+            }
+        },
+        part3: {
+            title: String,
+            duration: String,
+            description: String,
+            discussionTopics: [{
+                topic: String,
+                questions: [String]
+            }]
+        }
     },
     isActive: {
         type: Boolean,

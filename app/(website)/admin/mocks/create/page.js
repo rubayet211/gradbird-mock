@@ -16,8 +16,12 @@ export default function CreateMockPage() {
         title: '',
         type: 'Academic',
         listening: {
-            audioUrl: '',
-            questions: []
+            parts: [
+                { partNumber: 1, title: 'Part 1: Conversation', audioUrl: '', transcript: '', questions: [] },
+                { partNumber: 2, title: 'Part 2: Monologue', audioUrl: '', transcript: '', questions: [] },
+                { partNumber: 3, title: 'Part 3: Discussion', audioUrl: '', transcript: '', questions: [] },
+                { partNumber: 4, title: 'Part 4: Academic Lecture', audioUrl: '', transcript: '', questions: [] }
+            ]
         },
         reading: {
             sections: [
@@ -91,8 +95,8 @@ export default function CreateMockPage() {
                                 }`}
                         >
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold mb-2 transition-colors ${currentStep >= step.id
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-200 text-gray-500'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-200 text-gray-500'
                                 }`}>
                                 {step.id}
                             </div>

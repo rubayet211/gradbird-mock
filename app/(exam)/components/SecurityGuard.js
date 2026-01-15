@@ -2,30 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import { useExam } from '../contexts/ExamContext';
 
 export default function SecurityGuard() {
     const [isStarted, setIsStarted] = useState(false);
     const [securityAlert, setSecurityAlert] = useState(null); // null | 'TAB_SWITCH'
     const { sessionId } = useParams();
-
-    // Log security events to server
-    const logSecurityEvent = useCallback(async (eventType) => {
-        try {
-            await fetch('/api/exam/log-security', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    sessionId,
-                    eventType,
-                    timestamp: new Date().toISOString(),
-                }),
-            });
-        } catch (error) {
-            console.error('Failed to log security event:', error);
-        }
-    }, [sessionId]);
+    const { logSecurityEvent } = useExam(); // Use logger from context
 
     // Handle Page Visibility api
     useEffect(() => {

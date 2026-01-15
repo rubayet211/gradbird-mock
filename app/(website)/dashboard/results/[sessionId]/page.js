@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import connectDB from '@/lib/db';
 import TestSession from '@/models/TestSession';
 import MockTest from '@/models/MockTest';
-import { calculateScore } from '@/lib/grading';
+import { calculateScore, roundToIELTSBand } from '@/lib/grading';
 import { notFound, redirect } from 'next/navigation';
 import ResultView from './ResultView';
 
@@ -51,9 +51,10 @@ export default async function Page({ params }) {
         : {
             reading: results.reading.band,
             listening: results.listening.band,
-            overall: (results.reading.band + results.listening.band) / 2, // approximation
-            writing: 0,
-            speaking: 0
+            // Partial overall with official IELTS rounding
+            overall: roundToIELTSBand((results.reading.band + results.listening.band) / 2),
+            writing: null,
+            speaking: null
         };
 
     return (

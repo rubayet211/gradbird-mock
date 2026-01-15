@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import connectDB from '@/lib/db';
 import TestSession from '@/models/TestSession';
 import MockTest from '@/models/MockTest';
-import { calculateScore } from '@/lib/grading';
+import { calculateScore, roundToIELTSBand } from '@/lib/grading';
 
 export async function POST(request, { params }) {
     try {
@@ -43,9 +43,10 @@ export async function POST(request, { params }) {
         testSession.scores = {
             reading: results.reading.band,
             listening: results.listening.band,
-            overall: (results.reading.band + results.listening.band) / 2, // Simple average for now
-            writing: 0, // Pending grading
-            speaking: 0 // Pending grading
+            // Partial overall (2-component) with official IELTS rounding
+            overall: roundToIELTSBand((results.reading.band + results.listening.band) / 2),
+            writing: null, // Pending grading
+            speaking: null // Pending grading
         };
         // We might also want to store the detailed answer breakdown if needed, 
         // but typically we just re-calculate it on view or store it.

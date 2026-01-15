@@ -3,6 +3,17 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Font Scaling Factors */
+  --font-scale-standard: 1;
+  --font-scale-large: 1.125;
+  /* 18px base equivalent */
+  --font-scale-xl: 1.25;
+  /* 20px base equivalent */
+
+  /* Default Scale */
+  --font-scale: var(--font-scale-standard);
+  font-size: calc(16px * var(--font-scale));
 }
 
 @theme inline {
@@ -19,8 +30,60 @@
   }
 }
 
+
+/* Theme definitions */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #0f172a;
+  /* Slate-900 */
+  --panel-bg: #f3f4f6;
+  --card-bg: #ffffff;
+  --border-color: #e5e7eb;
+}
+
+[data-theme="inverted"] {
+  --bg-color: #000000;
+  --text-color: #ffffff;
+  --panel-bg: #111111;
+  --card-bg: #1a1a1a;
+  --input-bg: #2a2a2a;
+  --border-color: #374151;
+  --header-bg: #000000;
+  --header-text: #ffffff;
+}
+
+[data-theme="high-contrast"] {
+  --bg-color: #000000;
+  --text-color: #ffff00;
+  --panel-bg: #000000;
+  --card-bg: #000000;
+  --input-bg: #000000;
+  --border-color: #ffff00;
+  --header-bg: #000000;
+  --header-text: #ffff00;
+}
+
+[data-font-size="standard"] {
+  --font-scale: var(--font-scale-standard);
+}
+
+[data-font-size="large"] {
+  --font-scale: var(--font-scale-large);
+}
+
+[data-font-size="extra-large"] {
+  --font-scale: var(--font-scale-xl);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--bg-color);
+  color: var(--text-color);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Helper class for panels to respect theme */
+.theme-panel {
+  background-color: var(--panel-bg);
+  border-color: var(--border-color);
 }
