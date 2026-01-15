@@ -28,6 +28,9 @@ const TransactionSchema = new mongoose.Schema({
         enum: ['pending', 'approved', 'rejected'],
         default: 'pending',
     },
+    rejectionReason: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         default: Date.now,
