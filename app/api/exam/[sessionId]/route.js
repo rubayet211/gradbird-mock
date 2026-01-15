@@ -63,14 +63,24 @@ export async function GET(request, { params }) {
                 }))
             } : null,
             listening: mockTest.listening ? {
-                audioUrl: mockTest.listening.audioUrl,
-                questions: mockTest.listening.questions.map(q => ({
-                    id: q.id,
-                    type: q.type,
-                    text: q.text,
-                    options: q.options || [],
-                    // NOTE: correctAnswer is excluded for security
-                }))
+                parts: mockTest.listening.parts?.map(part => ({
+                    id: part._id?.toString(),
+                    partNumber: part.partNumber,
+                    title: part.title,
+                    audioUrl: part.audioUrl,
+                    transcript: part.transcript,
+                    questions: part.questions?.map(q => ({
+                        id: q.id,
+                        type: q.type,
+                        text: q.text,
+                        options: q.options || [],
+                        wordLimit: q.wordLimit,
+                        imageUrl: q.imageUrl,
+                        dropZones: q.dropZones,
+                        labels: q.labels,
+                        // NOTE: correctAnswer is excluded for security
+                    })) || [],
+                })) || [],
             } : null,
             writing: mockTest.writing ? {
                 task1: mockTest.writing.task1,

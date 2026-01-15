@@ -48,6 +48,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
     const [loadError, setLoadError] = useState(null);
     const lastSyncRef = useRef(Date.now());
     const syncIntervalRef = useRef(null);
+    const writingDebounceRef = useRef(null); // Debounce timer for writing auto-save
 
     // Theme state
     const [theme, setTheme] = useState('standard'); // 'standard' | 'inverted' | 'high-contrast'
@@ -300,7 +301,15 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
             ...prev,
             [`task${taskNumber}Text`]: text
         }));
-    }, []);
+
+        // Debounced server sync (after 2 seconds of no typing)
+        if (writingDebounceRef.current) {
+            clearTimeout(writingDebounceRef.current);
+        }
+        writingDebounceRef.current = setTimeout(() => {
+            syncProgressToServer();
+        }, 2000);
+    }, [syncProgressToServer]);
 
     // Timer countdown effect
     useEffect(() => {
