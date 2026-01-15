@@ -193,11 +193,12 @@ function GapFillItem({
                                         onChange={(e) => handleBlankChange(segment.index, e.target.value)}
                                         placeholder="..."
                                         disabled={disabled}
+                                        tabIndex={id} // Sequential tab navigation based on question ID
                                         className={`
                                             min-w-[120px] max-w-[200px] px-3 py-1.5 
                                             border-b-2 rounded-t
                                             text-center font-medium
-                                            focus:outline-none transition-all
+                                            focus:outline-none focus:ring-2 focus:ring-teal-400 transition-all
                                             disabled:opacity-50 disabled:cursor-not-allowed
                                             ${isOverLimit
                                                 ? 'border-red-500 text-red-700 bg-red-50'

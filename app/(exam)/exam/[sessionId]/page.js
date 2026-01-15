@@ -4,6 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import ExamHeader from '../../components/ExamHeader';
 import ExamFooter from '../../components/ExamFooter';
 import ReadingInterface from '../../components/ReadingInterface';
+import ListeningInterface from '../../components/ListeningInterface';
+import WritingInterface from '../../components/WritingInterface';
 import SpeakingInterface from '../../components/SpeakingInterface';
 import ReviewScreen from '../../components/ReviewScreen';
 
@@ -18,8 +20,9 @@ export default function ExamPage() {
 
             {/* Main Content Area */}
             {module === 'reading' && <ReadingInterface />}
+            {module === 'listening' && <ListeningInterface />}
+            {module === 'writing' && <WritingInterface />}
             {module === 'speaking' && <SpeakingInterface />}
-            {/* Add other modules here later */}
 
             {/* Footer */}
             <ExamFooter />

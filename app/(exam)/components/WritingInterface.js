@@ -1,16 +1,77 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import ResizableSplitPane from './ResizableSplitPane';
 import { useExam } from '../contexts/ExamContext';
 import { WRITING_EXAM_DATA, getTaskByNumber } from '../data/writing-data';
 
 export default function WritingInterface() {
-    const { writingResponses, updateWritingResponse, isExamEnded } = useExam();
+    const { writingResponses, updateWritingResponse, isExamEnded, examData, isLoading, loadError } = useExam();
     const [activeTask, setActiveTask] = useState(1);
 
-    const currentTask = getTaskByNumber(activeTask);
+    // Use examData from database if available, fallback to static data
+    const writingData = useMemo(() => {
+        if (examData?.writing) {
+            // Map database format to component format
+            return {
+                title: 'IELTS Academic Writing Test',
+                totalTime: 60,
+                tasks: [
+                    {
+                        id: 'task-1',
+                        taskNumber: 1,
+                        title: 'Academic Writing Task 1',
+                        time: '20 minutes',
+                        minWords: 150,
+                        instructions: examData.writing.task1?.promptText || 'Complete the writing task.',
+                        hasChart: true,
+                        chartImageUrl: examData.writing.task1?.imageUrls?.[0] || null,
+                        chartDescription: 'Chart for Task 1'
+                    },
+                    {
+                        id: 'task-2',
+                        taskNumber: 2,
+                        title: 'Academic Writing Task 2',
+                        time: '40 minutes',
+                        minWords: 250,
+                        instructions: examData.writing.task2?.promptText || 'Complete the essay task.',
+                        hasChart: false,
+                        chartImageUrl: null,
+                        chartDescription: null
+                    }
+                ]
+            };
+        }
+        // Fallback to static data for development/testing
+        return WRITING_EXAM_DATA;
+    }, [examData]);
+
+    const currentTask = writingData.tasks.find(t => t.taskNumber === activeTask) || writingData.tasks[0];
     const currentText = writingResponses[`task${activeTask}Text`] || '';
+
+    // Show loading state
+    if (isLoading) {
+        return (
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading exam...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show error state
+    if (loadError) {
+        return (
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+                <div className="text-center text-red-600">
+                    <p className="text-lg font-medium">Error loading exam</p>
+                    <p className="text-sm mt-2">{loadError}</p>
+                </div>
+            </div>
+        );
+    }
 
     // Calculate word count
     const getWordCount = useCallback((text) => {
@@ -183,7 +244,7 @@ export default function WritingInterface() {
 
             {/* Task Switching Tabs */}
             <div className="bg-gray-900 px-6 py-3 flex items-center justify-center gap-4">
-                {WRITING_EXAM_DATA.tasks.map((task) => (
+                {writingData.tasks.map((task) => (
                     <button
                         key={task.id}
                         onClick={() => setActiveTask(task.taskNumber)}

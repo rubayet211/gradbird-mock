@@ -24,7 +24,10 @@ export default function ReadingInterface() {
         addNote,
         isExamEnded,
         currentQuestionIndex,
-        goToQuestion
+        goToQuestion,
+        examData,
+        isLoading,
+        loadError,
     } = useExam();
 
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
@@ -36,9 +39,51 @@ export default function ReadingInterface() {
     const [isRestored, setIsRestored] = useState(false);
     const [notePositions, setNotePositions] = useState({});
 
+    // Use examData from database if available, fallback to static data
+    const readingData = useMemo(() => {
+        if (examData?.reading?.sections) {
+            // Map database format to component format
+            return {
+                title: examData.testTitle || 'Reading Test',
+                sections: examData.reading.sections.map(section => ({
+                    id: section.id,
+                    title: section.title,
+                    content: section.passageText,
+                    questions: section.questions || [],
+                }))
+            };
+        }
+        // Fallback to static data for development/testing
+        return READING_EXAM_DATA;
+    }, [examData]);
+
     // Passage Navigation State
     const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-    const currentSection = READING_EXAM_DATA.sections[currentSectionIndex];
+    const currentSection = readingData.sections[currentSectionIndex] || readingData.sections[0];
+
+    // Show loading state
+    if (isLoading) {
+        return (
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading exam...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show error state
+    if (loadError) {
+        return (
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+                <div className="text-center text-red-600">
+                    <p className="text-lg font-medium">Error loading exam</p>
+                    <p className="text-sm mt-2">{loadError}</p>
+                </div>
+            </div>
+        );
+    }
 
     // Restore highlights from context on passage change
     useEffect(() => {
@@ -295,7 +340,7 @@ export default function ReadingInterface() {
             </div>
 
             <div className="flex border-t" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--panel-bg)' }}>
-                {READING_EXAM_DATA.sections.map((section, index) => (
+                {readingData.sections.map((section, index) => (
                     <button
                         key={section.id}
                         onClick={() => setCurrentSectionIndex(index)}

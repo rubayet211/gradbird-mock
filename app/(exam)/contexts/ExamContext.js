@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
     getHighlights,
     saveHighlights,
@@ -35,6 +35,19 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [isExamEnded, setIsExamEnded] = useState(false);
     const [isHidden, setIsHidden] = useState(false);
+
+    // Listening module state
+    const [volume, setVolume] = useState(1); // 0.0 to 1.0
+    const [listeningPhase, setListeningPhase] = useState('audio'); // 'audio' | 'review' | 'ended'
+    const [reviewTimeLeft, setReviewTimeLeft] = useState(0); // 2 minutes = 120 seconds
+    const REVIEW_PERIOD_SECONDS = 120; // 2 minutes for review
+
+    // Exam data from database
+    const [examData, setExamData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
+    const lastSyncRef = useRef(Date.now());
+    const syncIntervalRef = useRef(null);
 
     // Theme state
     const [theme, setTheme] = useState('standard'); // 'standard' | 'inverted' | 'high-contrast'
@@ -77,6 +90,36 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
             return 'standard';
         });
     }, []);
+
+    // Start review phase (called when audio ends)
+    const startReviewPhase = useCallback(() => {
+        setListeningPhase('review');
+        setReviewTimeLeft(REVIEW_PERIOD_SECONDS);
+    }, []);
+
+    // Review phase countdown timer
+    useEffect(() => {
+        if (listeningPhase !== 'review' || reviewTimeLeft <= 0) return;
+
+        const interval = setInterval(() => {
+            setReviewTimeLeft((prev) => {
+                if (prev <= 1) {
+                    setListeningPhase('ended');
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [listeningPhase, reviewTimeLeft]);
+
+    // Auto-submit when review phase ends
+    useEffect(() => {
+        if (listeningPhase === 'ended' && reviewTimeLeft === 0 && !isExamEnded) {
+            submitExam();
+        }
+    }, [listeningPhase, reviewTimeLeft, isExamEnded]);
 
     // Log security events to server
     const logSecurityEvent = useCallback(async (eventType) => {
@@ -148,6 +191,81 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
             saveWritingResponses(sessionId, writingResponses);
         }
     }, [sessionId, writingResponses]);
+
+    // Fetch exam data from database on mount
+    useEffect(() => {
+        if (!sessionId) {
+            setIsLoading(false);
+            return;
+        }
+
+        const fetchExamData = async () => {
+            try {
+                setIsLoading(true);
+                const response = await fetch(`/api/exam/${sessionId}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to fetch exam data');
+                }
+
+                setExamData(data.examData);
+
+                // Restore saved answers if any
+                if (data.examData.savedAnswers) {
+                    setAnswers(data.examData.savedAnswers);
+                }
+
+                // Restore time remaining if any
+                if (data.examData.timeRemaining) {
+                    setTimeLeft(data.examData.timeRemaining);
+                }
+            } catch (error) {
+                console.error('Error fetching exam data:', error);
+                setLoadError(error.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchExamData();
+    }, [sessionId]);
+
+    // Debounced server sync every 60 seconds
+    const syncProgressToServer = useCallback(async () => {
+        if (!sessionId || isExamEnded) return;
+
+        try {
+            await fetch('/api/exam/save-progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionId,
+                    answers,
+                    writingResponses,
+                    timeRemaining: timeLeft,
+                }),
+            });
+            lastSyncRef.current = Date.now();
+        } catch (error) {
+            console.error('Failed to sync progress to server:', error);
+        }
+    }, [sessionId, answers, writingResponses, timeLeft, isExamEnded]);
+
+    // Set up auto-sync interval (every 60 seconds)
+    useEffect(() => {
+        if (!sessionId || isExamEnded) return;
+
+        syncIntervalRef.current = setInterval(() => {
+            syncProgressToServer();
+        }, 60000); // 60 seconds
+
+        return () => {
+            if (syncIntervalRef.current) {
+                clearInterval(syncIntervalRef.current);
+            }
+        };
+    }, [sessionId, isExamEnded, syncProgressToServer]);
 
     // Add a new highlight
     const addHighlight = useCallback((highlight) => {
@@ -333,6 +451,17 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         fontSize,
         toggleFontSize,
         setFontSize,
+        // Exam Data from Database
+        examData,
+        isLoading,
+        loadError,
+        // Listening Module
+        volume,
+        setVolume,
+        listeningPhase,
+        setListeningPhase,
+        reviewTimeLeft,
+        startReviewPhase,
     };
 
     return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

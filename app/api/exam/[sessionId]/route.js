@@ -1,0 +1,91 @@
+import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import connectDB from '@/lib/db';
+import TestSession from '@/models/TestSession';
+import MockTest from '@/models/MockTest';
+
+/**
+ * GET /api/exam/[sessionId]
+ * Fetch exam data (MockTest content) for a given test session
+ */
+export async function GET(request, { params }) {
+    try {
+        const session = await auth();
+
+        // Check authentication
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { sessionId } = params;
+
+        await connectDB();
+
+        // 1. Fetch Test Session
+        const testSession = await TestSession.findById(sessionId);
+        if (!testSession) {
+            return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+        }
+
+        // Verify user owns this session
+        if (testSession.user.toString() !== session.user.id) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        // Check if session is still active
+        if (testSession.status === 'completed') {
+            return NextResponse.json({ error: 'Exam already completed' }, { status: 400 });
+        }
+
+        // 2. Fetch Mock Test Data
+        const mockTest = await MockTest.findById(testSession.mockTest);
+        if (!mockTest) {
+            return NextResponse.json({ error: 'Mock Test data not found' }, { status: 404 });
+        }
+
+        // 3. Return exam data (exclude correct answers for security)
+        const examData = {
+            sessionId: testSession._id,
+            testTitle: mockTest.title,
+            testType: mockTest.type,
+            reading: mockTest.reading ? {
+                sections: mockTest.reading.sections.map(section => ({
+                    id: section._id?.toString() || section.title?.replace(/\s+/g, '-').toLowerCase(),
+                    title: section.title,
+                    passageText: section.passageText,
+                    questions: section.questions.map(q => ({
+                        id: q.id,
+                        type: q.type,
+                        text: q.text,
+                        options: q.options || [],
+                        // NOTE: correctAnswer is excluded for security
+                    }))
+                }))
+            } : null,
+            listening: mockTest.listening ? {
+                audioUrl: mockTest.listening.audioUrl,
+                questions: mockTest.listening.questions.map(q => ({
+                    id: q.id,
+                    type: q.type,
+                    text: q.text,
+                    options: q.options || [],
+                    // NOTE: correctAnswer is excluded for security
+                }))
+            } : null,
+            writing: mockTest.writing ? {
+                task1: mockTest.writing.task1,
+                task2: mockTest.writing.task2,
+            } : null,
+            // Session metadata
+            startedAt: testSession.startedAt,
+            timeRemaining: testSession.timeRemaining,
+            savedAnswers: testSession.answers || {},
+        };
+
+        return NextResponse.json({ success: true, examData });
+
+    } catch (error) {
+        console.error('Error fetching exam data:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
