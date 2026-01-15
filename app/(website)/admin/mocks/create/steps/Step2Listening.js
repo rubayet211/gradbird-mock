@@ -24,7 +24,12 @@ export default function Step2Listening({ data, updateData }) {
             type: 'MCQ',
             text: '',
             options: ['', '', '', ''],
-            correctAnswer: ''
+            correctAnswer: '',
+            // Initialize complex fields
+            items: [], // For Matching
+            labels: [], // For MapLabeling/DiagramLabeling
+            dropZones: [], // For MapLabeling
+            imageUrl: ''
         };
         const updatedParts = [...parts];
         updatedParts[partIndex].questions = [...(updatedParts[partIndex].questions || []), newQuestion];
@@ -68,8 +73,8 @@ export default function Step2Listening({ data, updateData }) {
                         key={index}
                         onClick={() => setActivePartIndex(index)}
                         className={`px-4 py-2 -mb-px text-sm font-medium transition-colors ${activePartIndex === index
-                                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                            ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                             }`}
                     >
                         Part {part.partNumber}
@@ -164,28 +169,36 @@ export default function Step2Listening({ data, updateData }) {
                                             <option value="TrueFalse">True/False/Not Given</option>
                                             <option value="Matching">Matching</option>
                                             <option value="ShortAnswer">Short Answer</option>
-                                            <option value="MapLabeling">Map/Diagram Labeling</option>
+                                            <option value="MapLabeling">Map Labeling</option>
+                                            <option value="DiagramLabeling">Diagram Labeling</option>
                                         </select>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Correct Answer</label>
-                                        <input
-                                            type="text"
-                                            value={q.correctAnswer || ''}
-                                            onChange={(e) => updateQuestion(activePartIndex, qIndex, 'correctAnswer', e.target.value)}
-                                            placeholder={q.type === 'TrueFalse' ? 'TRUE / FALSE / NOT GIVEN' : 'Answer'}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
-                                        />
-                                    </div>
+
+                                    {/* Standard Fields (Hidden for complex types) */}
+                                    {!['Matching', 'MapLabeling', 'DiagramLabeling'].includes(q.type) && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Correct Answer</label>
+                                            <input
+                                                type="text"
+                                                value={q.correctAnswer || ''}
+                                                onChange={(e) => updateQuestion(activePartIndex, qIndex, 'correctAnswer', e.target.value)}
+                                                placeholder={q.type === 'TrueFalse' ? 'TRUE / FALSE / NOT GIVEN' : 'Answer'}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
+                                {/* Common Text/Instruction Field */}
                                 <div className="mb-4">
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">Question Text / Stem</label>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                                        {['Matching', 'MapLabeling', 'DiagramLabeling'].includes(q.type) ? 'Instruction / Title' : 'Question Text / Stem'}
+                                    </label>
                                     <input
                                         type="text"
                                         value={q.text || ''}
                                         onChange={(e) => updateQuestion(activePartIndex, qIndex, 'text', e.target.value)}
-                                        placeholder="Enter the question text or sentence with blank (use ____ for gaps)"
+                                        placeholder={['Matching', 'MapLabeling', 'DiagramLabeling'].includes(q.type) ? "e.g., Match the features..." : "Enter the question text or sentence with blank (use ____ for gaps)"}
                                         className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
                                     />
                                 </div>
@@ -225,11 +238,11 @@ export default function Step2Listening({ data, updateData }) {
                                     </div>
                                 )}
 
-                                {/* MapLabeling fields */}
+                                {/* MapLabeling Configuration */}
                                 {q.type === 'MapLabeling' && (
                                     <div className="mt-4 space-y-4 p-3 bg-amber-50 rounded border border-amber-200">
                                         <p className="text-xs text-amber-700">
-                                            Map/Diagram questions require an image URL. Drop zones can be configured in the data.
+                                            <b>Map Labeling:</b> Provide an image and define drop zones (questions) and labels (options).
                                         </p>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-500 mb-1">Image URL</label>
@@ -240,6 +253,307 @@ export default function Step2Listening({ data, updateData }) {
                                                 placeholder="https://example.com/map.png"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
                                             />
+                                        </div>
+
+                                        {/* Labels (Options Pool) */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-2">Labels (Options to drag)</label>
+                                            <div className="space-y-2">
+                                                {(q.labels || []).map((label, lIndex) => (
+                                                    <div key={lIndex} className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={label || ''}
+                                                            onChange={(e) => {
+                                                                const newLabels = [...(q.labels || [])];
+                                                                newLabels[lIndex] = e.target.value;
+                                                                updateQuestion(activePartIndex, qIndex, 'labels', newLabels);
+                                                            }}
+                                                            placeholder={`Label ${lIndex + 1}`}
+                                                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm"
+                                                        />
+                                                        <button
+                                                            onClick={() => {
+                                                                const newLabels = (q.labels || []).filter((_, i) => i !== lIndex);
+                                                                updateQuestion(activePartIndex, qIndex, 'labels', newLabels);
+                                                            }}
+                                                            className="text-red-500 hover:text-red-700"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                <button
+                                                    onClick={() => updateQuestion(activePartIndex, qIndex, 'labels', [...(q.labels || []), ''])}
+                                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                >
+                                                    + Add Label
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Drop Zones (Questions) */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-2">Drop Zones (Questions on Map)</label>
+                                            <div className="space-y-3">
+                                                {(q.dropZones || []).map((zone, zIndex) => (
+                                                    <div key={zIndex} className="p-3 bg-white border border-gray-200 rounded text-sm space-y-2">
+                                                        <div className="flex justify-between">
+                                                            <span className="font-medium text-gray-600">Question {zIndex + 1}</span>
+                                                            <button
+                                                                onClick={() => {
+                                                                    const newZones = (q.dropZones || []).filter((_, i) => i !== zIndex);
+                                                                    updateQuestion(activePartIndex, qIndex, 'dropZones', newZones);
+                                                                }}
+                                                                className="text-red-500 hover:text-red-700"
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </div>
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            <div>
+                                                                <label className="text-xs text-gray-400">X (%)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    value={zone.x || 0}
+                                                                    onChange={(e) => {
+                                                                        const newZones = [...(q.dropZones || [])];
+                                                                        newZones[zIndex] = { ...zone, x: parseInt(e.target.value) || 0 };
+                                                                        updateQuestion(activePartIndex, qIndex, 'dropZones', newZones);
+                                                                    }}
+                                                                    className="w-full px-2 py-1 border rounded"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs text-gray-400">Y (%)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    value={zone.y || 0}
+                                                                    onChange={(e) => {
+                                                                        const newZones = [...(q.dropZones || [])];
+                                                                        newZones[zIndex] = { ...zone, y: parseInt(e.target.value) || 0 };
+                                                                        updateQuestion(activePartIndex, qIndex, 'dropZones', newZones);
+                                                                    }}
+                                                                    className="w-full px-2 py-1 border rounded"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs text-gray-400">Correct Answer</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={zone.correctAnswer || ''}
+                                                                    onChange={(e) => {
+                                                                        const newZones = [...(q.dropZones || [])];
+                                                                        newZones[zIndex] = { ...zone, correctAnswer: e.target.value };
+                                                                        updateQuestion(activePartIndex, qIndex, 'dropZones', newZones);
+                                                                    }}
+                                                                    className="w-full px-2 py-1 border rounded"
+                                                                    placeholder="Matches Label"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <button
+                                                    onClick={() => updateQuestion(activePartIndex, qIndex, 'dropZones', [...(q.dropZones || []), { id: crypto.randomUUID(), x: 50, y: 50, correctAnswer: '' }])}
+                                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                >
+                                                    + Add Drop Zone
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Matching Configuration */}
+                                {q.type === 'Matching' && (
+                                    <div className="mt-4 space-y-4 p-3 bg-indigo-50 rounded border border-indigo-200">
+                                        <p className="text-xs text-indigo-700">
+                                            <b>Matching:</b> Define options to be dragged and items (questions) to act as slots.
+                                        </p>
+
+                                        {/* Options */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-2">Options (Draggable)</label>
+                                            <div className="space-y-2">
+                                                {(q.options || []).map((opt, oIndex) => (
+                                                    <div key={oIndex} className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={opt || ''}
+                                                            onChange={(e) => {
+                                                                const newOptions = [...(q.options || [])];
+                                                                newOptions[oIndex] = e.target.value;
+                                                                updateQuestion(activePartIndex, qIndex, 'options', newOptions);
+                                                            }}
+                                                            placeholder={`Option ${oIndex + 1}`}
+                                                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm"
+                                                        />
+                                                        <button
+                                                            onClick={() => {
+                                                                const newOptions = (q.options || []).filter((_, i) => i !== oIndex);
+                                                                updateQuestion(activePartIndex, qIndex, 'options', newOptions);
+                                                            }}
+                                                            className="text-red-500 hover:text-red-700"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                <button
+                                                    onClick={() => updateQuestion(activePartIndex, qIndex, 'options', [...(q.options || []), ''])}
+                                                    className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                                                >
+                                                    + Add Option
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Items (Questions) */}
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-2">Items (Questions/Slots)</label>
+                                            <div className="space-y-3">
+                                                {(q.items || []).map((item, iIndex) => (
+                                                    <div key={iIndex} className="flex gap-2 items-start">
+                                                        <div className="flex-1 space-y-1">
+                                                            <input
+                                                                type="text"
+                                                                value={item.text || ''}
+                                                                onChange={(e) => {
+                                                                    const newItems = [...(q.items || [])];
+                                                                    newItems[iIndex] = { ...item, text: e.target.value };
+                                                                    updateQuestion(activePartIndex, qIndex, 'items', newItems);
+                                                                }}
+                                                                placeholder="Question Text"
+                                                                className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={item.correctAnswer || ''}
+                                                                onChange={(e) => {
+                                                                    const newItems = [...(q.items || [])];
+                                                                    newItems[iIndex] = { ...item, correctAnswer: e.target.value };
+                                                                    updateQuestion(activePartIndex, qIndex, 'items', newItems);
+                                                                }}
+                                                                placeholder="Correct Answer (must match an option)"
+                                                                className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm bg-gray-50"
+                                                            />
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                const newItems = (q.items || []).filter((_, i) => i !== iIndex);
+                                                                updateQuestion(activePartIndex, qIndex, 'items', newItems);
+                                                            }}
+                                                            className="text-red-500 hover:text-red-700 mt-2"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                <button
+                                                    onClick={() => updateQuestion(activePartIndex, qIndex, 'items', [...(q.items || []), { id: crypto.randomUUID(), text: '', correctAnswer: '' }])}
+                                                    className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                                                >
+                                                    + Add Item
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* DiagramLabeling Configuration */}
+                                {q.type === 'DiagramLabeling' && (
+                                    <div className="mt-4 space-y-4 p-3 bg-emerald-50 rounded border border-emerald-200">
+                                        <p className="text-xs text-emerald-700">
+                                            <b>Diagram Labeling:</b> Provide an image and labels (questions) with coordinates.
+                                        </p>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Image URL</label>
+                                            <input
+                                                type="text"
+                                                value={q.imageUrl || ''}
+                                                onChange={(e) => updateQuestion(activePartIndex, qIndex, 'imageUrl', e.target.value)}
+                                                placeholder="https://example.com/diagram.png"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-2">Labels (Questions)</label>
+                                            <div className="space-y-3">
+                                                {(q.questions || []).map((subQ, sIndex) => (
+                                                    <div key={sIndex} className="p-3 bg-white border border-gray-200 rounded text-sm space-y-2">
+                                                        <div className="flex justify-between">
+                                                            <span className="font-medium text-gray-600">Label {sIndex + 1}</span>
+                                                            <button
+                                                                onClick={() => {
+                                                                    const newQs = (q.questions || []).filter((_, i) => i !== sIndex);
+                                                                    updateQuestion(activePartIndex, qIndex, 'questions', newQs);
+                                                                }}
+                                                                className="text-red-500 hover:text-red-700"
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={subQ.label || ''}
+                                                                onChange={(e) => {
+                                                                    const newQs = [...(q.questions || [])];
+                                                                    newQs[sIndex] = { ...subQ, label: e.target.value };
+                                                                    updateQuestion(activePartIndex, qIndex, 'questions', newQs);
+                                                                }}
+                                                                placeholder="Label Text (visible)"
+                                                                className="col-span-2 w-full px-2 py-1 border rounded"
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={subQ.correctAnswer || ''}
+                                                                onChange={(e) => {
+                                                                    const newQs = [...(q.questions || [])];
+                                                                    newQs[sIndex] = { ...subQ, correctAnswer: e.target.value };
+                                                                    updateQuestion(activePartIndex, qIndex, 'questions', newQs);
+                                                                }}
+                                                                placeholder="Correct Answer"
+                                                                className="col-span-2 w-full px-2 py-1 border rounded bg-gray-50"
+                                                            />
+                                                            <div>
+                                                                <label className="text-xs text-gray-400">X (%)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    value={subQ.x || 0}
+                                                                    onChange={(e) => {
+                                                                        const newQs = [...(q.questions || [])];
+                                                                        newQs[sIndex] = { ...subQ, x: parseInt(e.target.value) || 0 };
+                                                                        updateQuestion(activePartIndex, qIndex, 'questions', newQs);
+                                                                    }}
+                                                                    className="w-full px-2 py-1 border rounded"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs text-gray-400">Y (%)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    value={subQ.y || 0}
+                                                                    onChange={(e) => {
+                                                                        const newQs = [...(q.questions || [])];
+                                                                        newQs[sIndex] = { ...subQ, y: parseInt(e.target.value) || 0 };
+                                                                        updateQuestion(activePartIndex, qIndex, 'questions', newQs);
+                                                                    }}
+                                                                    className="w-full px-2 py-1 border rounded"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <button
+                                                    onClick={() => updateQuestion(activePartIndex, qIndex, 'questions', [...(q.questions || []), { id: crypto.randomUUID(), x: 50, y: 50, label: '', correctAnswer: '' }])}
+                                                    className="text-xs text-emerald-600 hover:text-emerald-800 font-medium"
+                                                >
+                                                    + Add Label
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
