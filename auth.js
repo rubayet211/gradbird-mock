@@ -2,8 +2,10 @@ import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import connectDB from "@/lib/db"
 import User from "@/models/User"
+import { authConfig } from "./auth.config"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    ...authConfig,
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
@@ -11,6 +13,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     callbacks: {
+        ...authConfig.callbacks,
         async signIn({ user, account }) {
             if (account?.provider === 'google') {
                 try {
