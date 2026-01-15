@@ -19,7 +19,7 @@ export default async function LandingPage() {
     const packages = await getPackages();
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <>
             {/* Hero Section */}
             <section className="relative bg-white dark:bg-zinc-900 overflow-hidden">
                 <div className="max-w-7xl mx-auto">
@@ -154,7 +154,7 @@ export default async function LandingPage() {
                                 </div>
 
                                 <Link
-                                    href={session ? `/payment?packageId=${pkg._id}` : "/api/auth/signin"}
+                                    href={session ? `/payment/${pkg._id}` : "/api/auth/signin"}
                                     className="mt-8 block w-full bg-indigo-600 border border-transparent rounded-md py-3 text-center text-base font-medium text-white hover:bg-indigo-700"
                                 >
                                     Buy Now
@@ -164,37 +164,6 @@ export default async function LandingPage() {
                     </div>
                 </div>
             </section>
-
-            {/* Footer */}
-            <footer className="bg-gray-800 dark:bg-zinc-950">
-                <div className="max-w-7xl mx-auto py-12 px-4 overflow-hidden sm:px-6 lg:px-8">
-                    <nav className="-mx-5 -my-2 flex flex-wrap justify-center" aria-label="Footer">
-                        <div className="px-5 py-2">
-                            <Link href="#" className="text-base text-gray-400 hover:text-white">
-                                Home
-                            </Link>
-                        </div>
-                        <div className="px-5 py-2">
-                            <Link href="#" className="text-base text-gray-400 hover:text-white">
-                                About
-                            </Link>
-                        </div>
-                        <div className="px-5 py-2">
-                            <Link href="#" className="text-base text-gray-400 hover:text-white">
-                                Contact
-                            </Link>
-                        </div>
-                        <div className="px-5 py-2">
-                            <Link href="#" className="text-base text-gray-400 hover:text-white">
-                                Privacy Policy
-                            </Link>
-                        </div>
-                    </nav>
-                    <p className="mt-8 text-center text-base text-gray-400">
-                        &copy; 2026 Gradbirds. All rights reserved.
-                    </p>
-                </div>
-            </footer>
-        </div>
+        </>
     );
 }
