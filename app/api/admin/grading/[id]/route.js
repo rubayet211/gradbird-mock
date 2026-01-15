@@ -3,45 +3,7 @@ import dbConnect from '@/lib/dbConnect';
 import TestSession from '@/models/TestSession';
 import User from '@/models/User';
 import MockTest from '@/models/MockTest';
-
-function calculateOverallBand(scores) {
-    const { reading, listening, writing, speaking } = scores;
-    if (reading == null || listening == null || writing == null || speaking == null) {
-        return null;
-    }
-
-    const average = (reading + listening + writing + speaking) / 4;
-
-    // IELTS Rounding:
-    // .25 -> .5
-    // .75 -> next whole number
-    // Basically, we want to floor to nearest 0.5, then add 0.5 if remainder >= 0.25 ?
-    // Examples:
-    // 6.25 -> 6.5
-    // 6.125 -> 6.0
-    // 6.75 -> 7.0
-    // 6.625 -> 6.5
-
-    // Logic: 
-    // fractional part: 
-    // < 0.25 -> 0
-    // >= 0.25 && < 0.75 -> 0.5
-    // >= 0.75 -> 1.0
-
-    const whole = Math.floor(average);
-    const fraction = average - whole;
-
-    let roundedFraction = 0;
-    if (fraction < 0.25) {
-        roundedFraction = 0;
-    } else if (fraction < 0.75) {
-        roundedFraction = 0.5;
-    } else {
-        roundedFraction = 1.0;
-    }
-
-    return whole + roundedFraction;
-}
+import { roundToIELTSBand } from '@/lib/grading';
 
 export async function GET(req, { params }) {
     try {
@@ -83,10 +45,10 @@ export async function PUT(req, { params }) {
         // Update feedback
         if (feedback !== undefined) session.feedback = feedback;
 
-        // Recalculate overall
-        const newOverall = calculateOverallBand(session.scores);
-        if (newOverall !== null) {
-            session.scores.overall = newOverall;
+        // Recalculate overall using centralized IELTS rounding
+        const { reading, listening, writing, speaking } = session.scores;
+        if (reading != null && listening != null && writing != null && speaking != null) {
+            session.scores.overall = roundToIELTSBand((reading + listening + writing + speaking) / 4);
         }
 
         await session.save();
