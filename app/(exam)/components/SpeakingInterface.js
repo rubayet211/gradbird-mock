@@ -1,14 +1,40 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { SPEAKING_DATA } from '../data/speaking-data';
+import { useExam } from '../contexts/ExamContext';
+import { SPEAKING_DATA as MOCK_DATA } from '../data/speaking-data'; // Fallback for now or remove if strictly DB
+
 
 export default function SpeakingInterface() {
+    const { examData, isLoading } = useExam();
+    const speakingData = examData?.speaking || MOCK_DATA; // Fallback to MOCK_DATA if DB data missing
+
     const [part, setPart] = useState('part1'); // 'part1' | 'part2' | 'part3'
-    const [prepTimeLeft, setPrepTimeLeft] = useState(SPEAKING_DATA.part2.preparationTime);
-    const [speakingTimeLeft, setSpeakingTimeLeft] = useState(SPEAKING_DATA.part2.speakingTime);
+
+    // Safety check for part2 existence before accessing properties
+    const initialPrepTime = speakingData?.part2?.preparationTime || 60;
+    const initialSpeakingTime = speakingData?.part2?.speakingTime || 120;
+
+    const [prepTimeLeft, setPrepTimeLeft] = useState(initialPrepTime);
+    const [speakingTimeLeft, setSpeakingTimeLeft] = useState(initialSpeakingTime);
     const [isPrepTimerActive, setIsPrepTimerActive] = useState(false);
     const [isSpeakingTimerActive, setIsSpeakingTimerActive] = useState(false);
+
+    // Update timers if data loads late
+    useEffect(() => {
+        if (speakingData?.part2) {
+            setPrepTimeLeft(speakingData.part2.preparationTime);
+            setSpeakingTimeLeft(speakingData.part2.speakingTime);
+        }
+    }, [speakingData]);
+
+    if (isLoading) {
+        return <div className="h-full flex items-center justify-center">Loading speaking test...</div>;
+    }
+
+    if (!speakingData) {
+        return <div className="h-full flex items-center justify-center">Error: No speaking data found.</div>;
+    }
 
     // Timer logic for Part 2 Preparation
     useEffect(() => {
@@ -48,8 +74,10 @@ export default function SpeakingInterface() {
     const resetTimers = () => {
         setIsPrepTimerActive(false);
         setIsSpeakingTimerActive(false);
-        setPrepTimeLeft(SPEAKING_DATA.part2.preparationTime);
-        setSpeakingTimeLeft(SPEAKING_DATA.part2.speakingTime);
+        if (speakingData?.part2) {
+            setPrepTimeLeft(speakingData.part2.preparationTime);
+            setSpeakingTimeLeft(speakingData.part2.speakingTime);
+        }
     };
 
     return (
@@ -66,8 +94,8 @@ export default function SpeakingInterface() {
                                 if (p === 'part2') resetTimers();
                             }}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${part === p
-                                    ? 'bg-indigo-600 text-white shadow-md'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-indigo-600 text-white shadow-md'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
                             {p === 'part1' ? 'Part 1: Interview' : p === 'part2' ? 'Part 2: Long Turn' : 'Part 3: Discussion'}
@@ -82,11 +110,11 @@ export default function SpeakingInterface() {
                     {part === 'part1' && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                                <h3 className="text-2xl font-bold text-gray-900 mb-2">{SPEAKING_DATA.part1.title}</h3>
-                                <p className="text-gray-500">{SPEAKING_DATA.part1.duration}</p>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">{speakingData.part1.title}</h3>
+                                <p className="text-gray-500">{speakingData.part1.duration}</p>
                                 <hr className="my-6 border-gray-100" />
                                 <div className="prose prose-lg text-gray-700">
-                                    <p>{SPEAKING_DATA.part1.description}</p>
+                                    <p>{speakingData.part1.description}</p>
                                     <div className="bg-indigo-50 border-l-4 border-indigo-500 p-6 mt-6 rounded-r-lg">
                                         <h4 className="font-semibold text-indigo-900 mb-2">Instructions</h4>
                                         <p className="text-indigo-800 m-0">
@@ -112,8 +140,8 @@ export default function SpeakingInterface() {
                                     <button
                                         onClick={togglePrepTimer}
                                         className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isPrepTimerActive
-                                                ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                                                : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                                            ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                                            : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
                                             }`}
                                     >
                                         {isPrepTimerActive ? (
@@ -134,8 +162,8 @@ export default function SpeakingInterface() {
                                     <button
                                         onClick={toggleSpeakingTimer}
                                         className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isSpeakingTimerActive
-                                                ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                                                : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                                            ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                                            : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
                                             }`}
                                     >
                                         {isSpeakingTimerActive ? (
@@ -157,12 +185,12 @@ export default function SpeakingInterface() {
                                 </div>
                                 <div className="p-8">
                                     <p className="text-sm font-semibold text-indigo-600 mb-2 uppercase tracking-wider">Describe the following topic:</p>
-                                    <h4 className="text-2xl font-bold text-gray-900 mb-6">{SPEAKING_DATA.part2.cueCard.topic}</h4>
+                                    <h4 className="text-2xl font-bold text-gray-900 mb-6">{speakingData.part2.cueCard.topic}</h4>
 
                                     <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
                                         <p className="font-medium text-gray-700 mb-4">You should say:</p>
                                         <ul className="space-y-3">
-                                            {SPEAKING_DATA.part2.cueCard.prompts.map((prompt, idx) => (
+                                            {speakingData.part2.cueCard.prompts.map((prompt, idx) => (
                                                 <li key={idx} className="flex items-start gap-3 text-gray-800">
                                                     <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold mt-0.5">
                                                         {idx + 1}
@@ -185,13 +213,13 @@ export default function SpeakingInterface() {
                     {part === 'part3' && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                                <h3 className="text-2xl font-bold text-gray-900 mb-2">{SPEAKING_DATA.part3.title}</h3>
-                                <p className="text-gray-500">{SPEAKING_DATA.part3.duration}</p>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">{speakingData.part3.title}</h3>
+                                <p className="text-gray-500">{speakingData.part3.duration}</p>
                                 <hr className="my-6 border-gray-100" />
                                 <div className="prose prose-lg text-gray-700">
-                                    <p>{SPEAKING_DATA.part3.description}</p>
+                                    <p>{speakingData.part3.description}</p>
                                     <div className="grid gap-6 mt-8">
-                                        {SPEAKING_DATA.part3.discussionTopics.map((topicData, idx) => (
+                                        {speakingData.part3.discussionTopics.map((topicData, idx) => (
                                             <div key={idx} className="bg-gray-50 p-6 rounded-xl border border-gray-200">
                                                 <h4 className="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
                                                     <span className="w-2 h-8 bg-indigo-500 rounded-full"></span>

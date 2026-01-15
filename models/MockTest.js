@@ -62,7 +62,39 @@ const MockTestSchema = new mongoose.Schema({
         },
         task2: {
             promptText: String,
+            imageUrls: [String],
         },
+    },
+    speaking: {
+        part1: {
+            title: String,
+            duration: String,
+            description: String,
+            interviewTopics: [{
+                topic: String,
+                questions: [String]
+            }]
+        },
+        part2: {
+            title: String,
+            duration: String,
+            description: String,
+            preparationTime: Number,
+            speakingTime: Number,
+            cueCard: {
+                topic: String,
+                prompts: [String]
+            }
+        },
+        part3: {
+            title: String,
+            duration: String,
+            description: String,
+            discussionTopics: [{
+                topic: String,
+                questions: [String]
+            }]
+        }
     },
     isActive: {
         type: Boolean,

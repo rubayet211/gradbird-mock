@@ -86,6 +86,11 @@ export async function GET(request, { params }) {
                 task1: mockTest.writing.task1,
                 task2: mockTest.writing.task2,
             } : null,
+            speaking: mockTest.speaking ? {
+                part1: mockTest.speaking.part1,
+                part2: mockTest.speaking.part2,
+                part3: mockTest.speaking.part3,
+            } : null,
             // Session metadata
             startedAt: testSession.startedAt,
             timeRemaining: testSession.timeRemaining,
