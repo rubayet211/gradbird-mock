@@ -100,6 +100,12 @@ export default async function AdminDashboard() {
                     href="/admin/speaking"
                     color="bg-orange-500"
                 />
+                <DashboardCard
+                    title="Analytics"
+                    description="View detailed analytics and insights"
+                    href="/admin/analytics"
+                    color="bg-cyan-500"
+                />
             </div>
         </div>
     );

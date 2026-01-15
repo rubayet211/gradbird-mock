@@ -30,6 +30,7 @@ export default function AdminLayout({ children }) {
                     <NavLink href="/admin/mocks" icon={<TestIcon />}>Mock Tests</NavLink>
                     <NavLink href="/admin/grading" icon={<GradingIcon />}>Grading</NavLink>
                     <NavLink href="/admin/speaking" icon={<SpeakingIcon />}>Speaking Slots</NavLink>
+                    <NavLink href="/admin/analytics" icon={<AnalyticsIcon />}>Analytics</NavLink>
                 </nav>
 
                 <div className="p-4 border-t border-gray-200">
@@ -107,6 +108,14 @@ function SpeakingIcon() {
     return (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+        </svg>
+    )
+}
+
+function AnalyticsIcon() {
+    return (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
     )
 }
