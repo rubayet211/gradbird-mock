@@ -16,11 +16,9 @@ const ExamContext = createContext(null);
 
 // Initial time: 60 minutes in seconds
 const INITIAL_TIME = 60 * 60;
-const TOTAL_QUESTIONS = 40;
-
 // Generate initial question status
-const generateInitialQuestionStatus = () => {
-    return Array.from({ length: TOTAL_QUESTIONS }, (_, i) => ({
+const generateInitialQuestionStatus = (count) => {
+    return Array.from({ length: count }, (_, i) => ({
         id: i + 1,
         status: 'unanswered', // 'unanswered' | 'answered' | 'flagged'
     }));
@@ -28,9 +26,10 @@ const generateInitialQuestionStatus = () => {
 
 export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }) {
     const [timeLeft, setTimeLeft] = useState(initialTime);
+    const [totalQuestions, setTotalQuestions] = useState(0);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState({});
-    const [questionStatus, setQuestionStatus] = useState(generateInitialQuestionStatus);
+    const [questionStatus, setQuestionStatus] = useState([]);
     const [isTimerRunning, setIsTimerRunning] = useState(true);
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [isExamEnded, setIsExamEnded] = useState(false);
@@ -210,12 +209,55 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                     throw new Error(data.error || 'Failed to fetch exam data');
                 }
 
+                // Calculate total questions based on exam data structure
+                let count = 0;
+                const eData = data.examData;
+
+                if (eData.reading) {
+                    count = eData.reading.sections?.reduce((acc, sec) => acc + (sec.questions?.length || 0), 0) || 0;
+                } else if (eData.listening) {
+                    count = eData.listening.parts?.reduce((acc, part) => acc + (part.questions?.length || 0), 0) || 0;
+                } else if (eData.writing) {
+                    count = 2; // Task 1 and Task 2
+                } else if (eData.speaking) {
+                    count = 3; // Part 1, 2, 3
+                } else if (eData.sections) {
+                    // Direct access (Reading)
+                    count = eData.sections.reduce((acc, sec) => acc + (sec.questions?.length || 0), 0);
+                } else if (eData.parts) {
+                    // Direct access (Listening)
+                    count = eData.parts.reduce((acc, part) => acc + (part.questions?.length || 0), 0);
+                } else if (eData.task1) {
+                    // Direct access (Writing)
+                    count = 2;
+                } else if (eData.part1) {
+                    // Direct access (Speaking)
+                    count = 3;
+                }
+
+                // Fallback default if calculation fails (e.g. empty test or error)
+                if (count === 0) count = 40;
+
+                setTotalQuestions(count);
+
+                // Initialize question status
+                let initialStatus = generateInitialQuestionStatus(count);
+
                 setExamData(data.examData);
 
                 // Restore saved answers if any
                 if (data.examData.savedAnswers) {
                     setAnswers(data.examData.savedAnswers);
+
+                    // Update status for answered questions
+                    const saved = data.examData.savedAnswers;
+                    initialStatus = initialStatus.map(q => ({
+                        ...q,
+                        status: saved[q.id] ? 'answered' : 'unanswered'
+                    }));
                 }
+
+                setQuestionStatus(initialStatus);
 
                 // Restore time remaining if any
                 if (data.examData.timeRemaining) {
@@ -360,15 +402,15 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
 
     // Navigate to a specific question
     const goToQuestion = useCallback((index) => {
-        if (index >= 0 && index < TOTAL_QUESTIONS) {
+        if (index >= 0 && index < totalQuestions) {
             setCurrentQuestionIndex(index);
         }
-    }, []);
+    }, [totalQuestions]);
 
     // Go to next question
     const goToNextQuestion = useCallback(() => {
-        setCurrentQuestionIndex((prev) => Math.min(prev + 1, TOTAL_QUESTIONS - 1));
-    }, []);
+        setCurrentQuestionIndex((prev) => Math.min(prev + 1, totalQuestions - 1));
+    }, [totalQuestions]);
 
     // Go to previous question
     const goToPrevQuestion = useCallback(() => {
@@ -425,7 +467,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         answers,
         questionStatus,
         isTimerRunning,
-        totalQuestions: TOTAL_QUESTIONS,
+        totalQuestions,
         goToQuestion,
         goToNextQuestion,
         goToPrevQuestion,

@@ -15,6 +15,7 @@ export default function CreateMockPage() {
     const [testData, setTestData] = useState({
         title: '',
         type: 'Academic',
+        moduleType: 'Full',
         listening: {
             parts: [
                 { partNumber: 1, title: 'Part 1: Conversation', audioUrl: '', transcript: '', questions: [] },
@@ -67,27 +68,47 @@ export default function CreateMockPage() {
         }
     };
 
-    const steps = [
+    const allSteps = [
         { id: 1, title: 'Details', component: Step1Details },
         { id: 2, title: 'Listening', component: Step2Listening },
         { id: 3, title: 'Reading', component: Step3Reading },
         { id: 4, title: 'Writing', component: Step4Writing },
     ];
 
-    const CurrentComponent = steps.find(s => s.id === currentStep)?.component || Step1Details;
+    let steps = [];
+    if (testData.moduleType === 'Full') {
+        steps = allSteps;
+    } else if (testData.moduleType === 'Listening') {
+        steps = [allSteps[0], allSteps[1]];
+    } else if (testData.moduleType === 'Reading') {
+        steps = [allSteps[0], allSteps[2]];
+    } else if (testData.moduleType === 'Writing') {
+        steps = [allSteps[0], allSteps[3]];
+    } else if (testData.moduleType === 'Speaking') {
+        steps = [allSteps[0]];
+    }
+
+    // Remap IDs to be sequential based on the filtered steps
+    const activeSteps = steps.map((s, index) => ({
+        ...s,
+        id: index + 1,
+        // Keep original component but remap the ID for the stepper UI
+    }));
+
+    const CurrentComponent = activeSteps.find(s => s.id === currentStep)?.component || Step1Details;
 
     return (
         <div className="max-w-5xl mx-auto p-6">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Mock Test</h1>
-                <p className="text-gray-600">Follow the steps to configure the full IELTS mock test.</p>
+                <p className="text-gray-600">Follow the steps to configure the {testData.moduleType === 'Full' ? 'full IELTS' : `${testData.moduleType}`} mock test.</p>
             </div>
 
             {/* Stepper */}
             <div className="mb-8">
                 <div className="flex items-center justify-between relative">
                     <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-gray-200 -z-10" />
-                    {steps.map((step) => (
+                    {activeSteps.map((step) => (
                         <div
                             key={step.id}
                             onClick={() => setCurrentStep(step.id)}
@@ -124,12 +145,12 @@ export default function CreateMockPage() {
                     Back
                 </button>
 
-                {currentStep < 4 ? (
+                {currentStep < activeSteps.length ? (
                     <button
-                        onClick={() => setCurrentStep(prev => Math.min(4, prev + 1))}
+                        onClick={() => setCurrentStep(prev => Math.min(activeSteps.length, prev + 1))}
                         className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                     >
-                        Next: {steps.find(s => s.id === currentStep + 1)?.title}
+                        Next: {activeSteps.find(s => s.id === currentStep + 1)?.title}
                     </button>
                 ) : (
                     <button

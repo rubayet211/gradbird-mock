@@ -21,7 +21,7 @@ async function getUserData(userId) {
 async function getTestSessions(userId) {
     await connectDB();
     const sessions = await TestSession.find({ user: userId })
-        .populate('mockTest', 'title')
+        .populate('mockTest', 'title moduleType')
         .sort({ startedAt: -1 })
         .lean();
     return sessions.map(session => ({
@@ -31,6 +31,7 @@ async function getTestSessions(userId) {
         mockTest: session.mockTest ? {
             _id: session.mockTest._id.toString(),
             title: session.mockTest.title,
+            moduleType: session.mockTest.moduleType || 'Full',
         } : null,
         startedAt: session.startedAt?.toISOString(),
         completedAt: session.completedAt?.toISOString(),
@@ -185,6 +186,9 @@ export default async function DashboardPage() {
                                                 Test Name
                                             </th>
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                Module
+                                            </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                 Date
                                             </th>
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -205,6 +209,14 @@ export default async function DashboardPage() {
                                                     {testSession.mockTest?.title || 'Unknown Test'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${!testSession.mockTest?.moduleType || testSession.mockTest?.moduleType === 'Full'
+                                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                                            : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                                                        }`}>
+                                                        {testSession.mockTest?.moduleType || 'Full'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                     {formatDate(testSession.startedAt)}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -216,7 +228,16 @@ export default async function DashboardPage() {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                     {testSession.status === 'in_progress' ? (
                                                         <Link
-                                                            href={`/exam/${testSession._id}`}
+                                                            href={(() => {
+                                                                let url = `/exam/${testSession._id}`;
+                                                                const moduleType = testSession.mockTest?.moduleType || 'Full';
+                                                                if (moduleType !== 'Full') {
+                                                                    url += `?module=${moduleType.toLowerCase()}`;
+                                                                } else {
+                                                                    url += `?module=listening`; // Default start
+                                                                }
+                                                                return url;
+                                                            })()}
                                                             className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                                                         >
                                                             Continue
