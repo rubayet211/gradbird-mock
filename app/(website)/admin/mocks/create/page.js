@@ -6,13 +6,14 @@ import Step1Details from './steps/Step1Details';
 import Step2Listening from './steps/Step2Listening';
 import Step3Reading from './steps/Step3Reading';
 import Step4Writing from './steps/Step4Writing';
+import { SPEAKING_DATA } from '@/app/(exam)/data/speaking-data';
 
 export default function CreateMockPage() {
     const router = useRouter();
     const [currentStep, setCurrentStep] = useState(1);
     const [isSaving, setIsSaving] = useState(false);
 
-    const [testData, setTestData] = useState({
+    const [testData, setTestData] = useState(() => ({
         title: '',
         type: 'Academic',
         moduleType: 'Full',
@@ -34,8 +35,9 @@ export default function CreateMockPage() {
         writing: {
             task1: { promptText: '', imageUrls: [] },
             task2: { promptText: '' }
-        }
-    });
+        },
+        speaking: JSON.parse(JSON.stringify(SPEAKING_DATA)),
+    }));
 
     const updateData = (newData) => {
         setTestData(prev => ({ ...prev, ...newData }));
