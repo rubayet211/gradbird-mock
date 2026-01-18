@@ -409,7 +409,9 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
 
     // Go to next question
     const goToNextQuestion = useCallback(() => {
-        setCurrentQuestionIndex((prev) => Math.min(prev + 1, totalQuestions - 1));
+        if (totalQuestions <= 0) return;
+        const maxIndex = Math.max(totalQuestions - 1, 0);
+        setCurrentQuestionIndex((prev) => Math.min(prev + 1, maxIndex));
     }, [totalQuestions]);
 
     // Go to previous question
