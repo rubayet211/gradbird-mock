@@ -103,7 +103,7 @@ export default function ReviewScreen() {
                                         <div className="absolute bottom-1 w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
                                     )}
 
-                                    <span className="text-lg">{question.id}</span>
+                                    <span className="text-lg">{index + 1}</span>
                                 </button>
                             );
                         })}

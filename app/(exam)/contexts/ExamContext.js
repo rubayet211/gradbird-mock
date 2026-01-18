@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
     getHighlights,
     saveHighlights,
@@ -24,7 +25,177 @@ const generateInitialQuestionStatus = (count) => {
     }));
 };
 
+const extractQuestionIdsFromBlocks = (blocks = []) => {
+    const ids = [];
+
+    blocks.forEach((block) => {
+        if (!block) return;
+
+        if (Array.isArray(block.items)) {
+            block.items.forEach((item) => {
+                if (item && item.id !== undefined) {
+                    ids.push(item.id);
+                }
+            });
+            return;
+        }
+
+        if (block.type === 'Matching' && Array.isArray(block.data?.items)) {
+            const startNumber = Number(block.startId ?? block.startNumber);
+            if (Number.isFinite(startNumber)) {
+                block.data.items.forEach((_, index) => {
+                    ids.push(startNumber + index);
+                });
+            }
+            return;
+        }
+
+        if (block.type === 'MapLabeling' && Array.isArray(block.data?.dropZones)) {
+            block.data.dropZones.forEach((zone) => {
+                if (zone?.questionId !== undefined) {
+                    ids.push(zone.questionId);
+                }
+            });
+            return;
+        }
+
+        if (Array.isArray(block.data?.questions)) {
+            block.data.questions.forEach((question) => {
+                if (question && question.id !== undefined) {
+                    ids.push(question.id);
+                }
+            });
+            return;
+        }
+
+        if (block.type === 'MultipleAnswer' && block.data?.id !== undefined) {
+            ids.push(block.data.id);
+            return;
+        }
+
+        if (block.id !== undefined) {
+            ids.push(block.id);
+        }
+    });
+
+    return ids;
+};
+
+const getQuestionIdsFromExamData = (examData, activeModule) => {
+    if (!examData) return [];
+
+    const moduleKey = (activeModule || '').toLowerCase();
+    if (moduleKey === 'reading' && examData.reading?.sections) {
+        return examData.reading.sections.flatMap((section) =>
+            extractQuestionIdsFromBlocks(section.questions || [])
+        );
+    }
+
+    if (moduleKey === 'listening' && examData.listening?.parts) {
+        return examData.listening.parts.flatMap((part) =>
+            extractQuestionIdsFromBlocks(part.questions || [])
+        );
+    }
+
+    if (moduleKey === 'writing') {
+        return [1, 2];
+    }
+
+    if (moduleKey === 'speaking') {
+        return [1, 2, 3];
+    }
+
+    if (examData.reading?.sections) {
+        return examData.reading.sections.flatMap((section) =>
+            extractQuestionIdsFromBlocks(section.questions || [])
+        );
+    }
+
+    if (examData.listening?.parts) {
+        return examData.listening.parts.flatMap((part) =>
+            extractQuestionIdsFromBlocks(part.questions || [])
+        );
+    }
+
+    if (examData.writing) {
+        return [1, 2];
+    }
+
+    if (examData.speaking) {
+        return [1, 2, 3];
+    }
+
+    if (examData.sections) {
+        return examData.sections.flatMap((section) =>
+            extractQuestionIdsFromBlocks(section.questions || [])
+        );
+    }
+
+    if (examData.parts) {
+        return examData.parts.flatMap((part) =>
+            extractQuestionIdsFromBlocks(part.questions || [])
+        );
+    }
+
+    if (examData.task1) {
+        return [1, 2];
+    }
+
+    if (examData.part1) {
+        return [1, 2, 3];
+    }
+
+    return [];
+};
+
+const buildQuestionStatus = (questionIds, savedAnswers = {}) => {
+    return questionIds.map((id) => ({
+        id,
+        status: savedAnswers[id] ? 'answered' : 'unanswered',
+    }));
+};
+
+const getReadingQuestionCount = (examData) => {
+    const sections = examData?.reading?.sections ?? examData?.sections ?? [];
+    return sections.reduce((acc, sec) => acc + (sec.questions?.length || 0), 0);
+};
+
+const getListeningQuestionCount = (examData) => {
+    const parts = examData?.listening?.parts ?? examData?.parts ?? [];
+    return parts.reduce((acc, part) => acc + (part.questions?.length || 0), 0);
+};
+
+const resolveQuestionCount = (examData, activeModule) => {
+    if (!examData) return 0;
+
+    const moduleKey = (activeModule || '').toLowerCase();
+    if (moduleKey === 'reading') return getReadingQuestionCount(examData);
+    if (moduleKey === 'listening') return getListeningQuestionCount(examData);
+    if (moduleKey === 'writing') return 2;
+    if (moduleKey === 'speaking') return 3;
+
+    const readingCount = getReadingQuestionCount(examData);
+    if (readingCount > 0) return readingCount;
+
+    const listeningCount = getListeningQuestionCount(examData);
+    if (listeningCount > 0) return listeningCount;
+
+    if (examData.writing || examData.task1) return 2;
+    if (examData.speaking || examData.part1) return 3;
+
+    return 0;
+};
+
+const getDefaultQuestionCount = (activeModule) => {
+    const moduleKey = (activeModule || '').toLowerCase();
+    if (moduleKey === 'writing') return 2;
+    if (moduleKey === 'speaking') return 3;
+    return 40;
+};
+
 export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }) {
+    const searchParams = useSearchParams();
+    const activeModule = (searchParams?.get('module') || 'reading').toLowerCase();
     const [timeLeft, setTimeLeft] = useState(initialTime);
     const [totalQuestions, setTotalQuestions] = useState(0);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -139,7 +310,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         } catch (error) {
             console.error('Failed to log security event:', error);
         }
-    }, [sessionId]);
+    }, [sessionId, activeModule]);
 
     const toggleHideScreen = useCallback(() => {
         setIsHidden((prev) => {
@@ -209,48 +380,31 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                     throw new Error(data.error || 'Failed to fetch exam data');
                 }
 
-                // Calculate total questions based on exam data structure
-                let count = 0;
-                const eData = data.examData;
-
-                if (eData.reading) {
-                    count = eData.reading.sections?.reduce((acc, sec) => acc + (sec.questions?.length || 0), 0) || 0;
-                } else if (eData.listening) {
-                    count = eData.listening.parts?.reduce((acc, part) => acc + (part.questions?.length || 0), 0) || 0;
-                } else if (eData.writing) {
-                    count = 2; // Task 1 and Task 2
-                } else if (eData.speaking) {
-                    count = 3; // Part 1, 2, 3
-                } else if (eData.sections) {
-                    // Direct access (Reading)
-                    count = eData.sections.reduce((acc, sec) => acc + (sec.questions?.length || 0), 0);
-                } else if (eData.parts) {
-                    // Direct access (Listening)
-                    count = eData.parts.reduce((acc, part) => acc + (part.questions?.length || 0), 0);
-                } else if (eData.task1) {
-                    // Direct access (Writing)
-                    count = 2;
-                } else if (eData.part1) {
-                    // Direct access (Speaking)
-                    count = 3;
-                }
+                // Calculate total questions based on the active module
+                let count = resolveQuestionCount(data.examData, activeModule);
 
                 // Fallback default if calculation fails (e.g. empty test or error)
-                if (count === 0) count = 40;
+                if (count === 0) count = getDefaultQuestionCount(activeModule);
 
-                setTotalQuestions(count);
+                const questionIds = getQuestionIdsFromExamData(data.examData, activeModule);
+                const totalCount = questionIds.length > 0 ? questionIds.length : count;
 
-                // Initialize question status
-                let initialStatus = generateInitialQuestionStatus(count);
-
+                setTotalQuestions(totalCount);
                 setExamData(data.examData);
+
+                const saved = data.examData.savedAnswers || {};
 
                 // Restore saved answers if any
                 if (data.examData.savedAnswers) {
-                    setAnswers(data.examData.savedAnswers);
+                    setAnswers(saved);
+                }
 
-                    // Update status for answered questions
-                    const saved = data.examData.savedAnswers;
+                // Initialize question status
+                let initialStatus = questionIds.length > 0
+                    ? buildQuestionStatus(questionIds, saved)
+                    : generateInitialQuestionStatus(totalCount);
+
+                if (!questionIds.length && data.examData.savedAnswers) {
                     initialStatus = initialStatus.map(q => ({
                         ...q,
                         status: saved[q.id] ? 'answered' : 'unanswered'
