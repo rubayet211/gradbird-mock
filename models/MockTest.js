@@ -10,6 +10,12 @@ const MockTestSchema = new mongoose.Schema({
         enum: ['Academic', 'General Training'],
         required: [true, 'Please specify the test type.'],
     },
+    moduleType: {
+        type: String,
+        enum: ['Full', 'Listening', 'Reading', 'Writing', 'Speaking'],
+        default: 'Full',
+        required: true,
+    },
     listening: {
         parts: [{
             partNumber: { type: Number, required: true },

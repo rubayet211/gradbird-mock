@@ -27,7 +27,16 @@ export default function StartTestButton() {
             }
 
             // Redirect to exam page
-            router.push(`/exam/${data.sessionId}`);
+            // Redirect to exam page with appropriate module param
+            let redirectUrl = `/exam/${data.sessionId}`;
+            if (data.moduleType && data.moduleType !== 'Full') {
+                redirectUrl += `?module=${data.moduleType.toLowerCase()}`;
+            } else {
+                // Default for Full test (starts with listening)
+                redirectUrl += `?module=listening`;
+            }
+
+            router.push(redirectUrl);
         } catch (err) {
             setError(err.message);
             setLoading(false);

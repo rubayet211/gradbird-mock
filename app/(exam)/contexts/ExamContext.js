@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
     getHighlights,
     saveHighlights,
@@ -16,21 +17,190 @@ const ExamContext = createContext(null);
 
 // Initial time: 60 minutes in seconds
 const INITIAL_TIME = 60 * 60;
-const TOTAL_QUESTIONS = 40;
-
 // Generate initial question status
-const generateInitialQuestionStatus = () => {
-    return Array.from({ length: TOTAL_QUESTIONS }, (_, i) => ({
+const generateInitialQuestionStatus = (count) => {
+    return Array.from({ length: count }, (_, i) => ({
         id: i + 1,
         status: 'unanswered', // 'unanswered' | 'answered' | 'flagged'
     }));
 };
 
+const extractQuestionIdsFromBlocks = (blocks = []) => {
+    const ids = [];
+
+    blocks.forEach((block) => {
+        if (!block) return;
+
+        if (Array.isArray(block.items)) {
+            block.items.forEach((item) => {
+                if (item && item.id !== undefined) {
+                    ids.push(item.id);
+                }
+            });
+            return;
+        }
+
+        if (block.type === 'Matching' && Array.isArray(block.data?.items)) {
+            const startNumber = Number(block.startId ?? block.startNumber);
+            if (Number.isFinite(startNumber)) {
+                block.data.items.forEach((_, index) => {
+                    ids.push(startNumber + index);
+                });
+            }
+            return;
+        }
+
+        if (block.type === 'MapLabeling' && Array.isArray(block.data?.dropZones)) {
+            block.data.dropZones.forEach((zone) => {
+                if (zone?.questionId !== undefined) {
+                    ids.push(zone.questionId);
+                }
+            });
+            return;
+        }
+
+        if (Array.isArray(block.data?.questions)) {
+            block.data.questions.forEach((question) => {
+                if (question && question.id !== undefined) {
+                    ids.push(question.id);
+                }
+            });
+            return;
+        }
+
+        if (block.type === 'MultipleAnswer' && block.data?.id !== undefined) {
+            ids.push(block.data.id);
+            return;
+        }
+
+        if (block.id !== undefined) {
+            ids.push(block.id);
+        }
+    });
+
+    return ids;
+};
+
+const getQuestionIdsFromExamData = (examData, activeModule) => {
+    if (!examData) return [];
+
+    const moduleKey = (activeModule || '').toLowerCase();
+    if (moduleKey === 'reading' && examData.reading?.sections) {
+        return examData.reading.sections.flatMap((section) =>
+            extractQuestionIdsFromBlocks(section.questions || [])
+        );
+    }
+
+    if (moduleKey === 'listening' && examData.listening?.parts) {
+        return examData.listening.parts.flatMap((part) =>
+            extractQuestionIdsFromBlocks(part.questions || [])
+        );
+    }
+
+    if (moduleKey === 'writing') {
+        return [1, 2];
+    }
+
+    if (moduleKey === 'speaking') {
+        return [1, 2, 3];
+    }
+
+    if (examData.reading?.sections) {
+        return examData.reading.sections.flatMap((section) =>
+            extractQuestionIdsFromBlocks(section.questions || [])
+        );
+    }
+
+    if (examData.listening?.parts) {
+        return examData.listening.parts.flatMap((part) =>
+            extractQuestionIdsFromBlocks(part.questions || [])
+        );
+    }
+
+    if (examData.writing) {
+        return [1, 2];
+    }
+
+    if (examData.speaking) {
+        return [1, 2, 3];
+    }
+
+    if (examData.sections) {
+        return examData.sections.flatMap((section) =>
+            extractQuestionIdsFromBlocks(section.questions || [])
+        );
+    }
+
+    if (examData.parts) {
+        return examData.parts.flatMap((part) =>
+            extractQuestionIdsFromBlocks(part.questions || [])
+        );
+    }
+
+    if (examData.task1) {
+        return [1, 2];
+    }
+
+    if (examData.part1) {
+        return [1, 2, 3];
+    }
+
+    return [];
+};
+
+const buildQuestionStatus = (questionIds, savedAnswers = {}) => {
+    return questionIds.map((id) => ({
+        id,
+        status: savedAnswers[id] ? 'answered' : 'unanswered',
+    }));
+};
+
+const getReadingQuestionCount = (examData) => {
+    const sections = examData?.reading?.sections ?? examData?.sections ?? [];
+    return sections.reduce((acc, sec) => acc + (sec.questions?.length || 0), 0);
+};
+
+const getListeningQuestionCount = (examData) => {
+    const parts = examData?.listening?.parts ?? examData?.parts ?? [];
+    return parts.reduce((acc, part) => acc + (part.questions?.length || 0), 0);
+};
+
+const resolveQuestionCount = (examData, activeModule) => {
+    if (!examData) return 0;
+
+    const moduleKey = (activeModule || '').toLowerCase();
+    if (moduleKey === 'reading') return getReadingQuestionCount(examData);
+    if (moduleKey === 'listening') return getListeningQuestionCount(examData);
+    if (moduleKey === 'writing') return 2;
+    if (moduleKey === 'speaking') return 3;
+
+    const readingCount = getReadingQuestionCount(examData);
+    if (readingCount > 0) return readingCount;
+
+    const listeningCount = getListeningQuestionCount(examData);
+    if (listeningCount > 0) return listeningCount;
+
+    if (examData.writing || examData.task1) return 2;
+    if (examData.speaking || examData.part1) return 3;
+
+    return 0;
+};
+
+const getDefaultQuestionCount = (activeModule) => {
+    const moduleKey = (activeModule || '').toLowerCase();
+    if (moduleKey === 'writing') return 2;
+    if (moduleKey === 'speaking') return 3;
+    return 40;
+};
+
 export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }) {
+    const searchParams = useSearchParams();
+    const activeModule = (searchParams?.get('module') || 'reading').toLowerCase();
     const [timeLeft, setTimeLeft] = useState(initialTime);
+    const [totalQuestions, setTotalQuestions] = useState(0);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState({});
-    const [questionStatus, setQuestionStatus] = useState(generateInitialQuestionStatus);
+    const [questionStatus, setQuestionStatus] = useState([]);
     const [isTimerRunning, setIsTimerRunning] = useState(true);
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [isExamEnded, setIsExamEnded] = useState(false);
@@ -140,7 +310,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         } catch (error) {
             console.error('Failed to log security event:', error);
         }
-    }, [sessionId]);
+    }, [sessionId, activeModule]);
 
     const toggleHideScreen = useCallback(() => {
         setIsHidden((prev) => {
@@ -170,7 +340,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
             setNotes(storedNotes);
             setWritingResponses(storedWriting);
         }
-    }, [sessionId]);
+    }, [sessionId, activeModule]);
 
     // Save highlights to localStorage when they change
     useEffect(() => {
@@ -210,12 +380,38 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                     throw new Error(data.error || 'Failed to fetch exam data');
                 }
 
+                // Calculate total questions based on the active module
+                let count = resolveQuestionCount(data.examData, activeModule);
+
+                // Fallback default if calculation fails (e.g. empty test or error)
+                if (count === 0) count = getDefaultQuestionCount(activeModule);
+
+                const questionIds = getQuestionIdsFromExamData(data.examData, activeModule);
+                const totalCount = questionIds.length > 0 ? questionIds.length : count;
+
+                setTotalQuestions(totalCount);
                 setExamData(data.examData);
+
+                const saved = data.examData.savedAnswers || {};
 
                 // Restore saved answers if any
                 if (data.examData.savedAnswers) {
-                    setAnswers(data.examData.savedAnswers);
+                    setAnswers(saved);
                 }
+
+                // Initialize question status
+                let initialStatus = questionIds.length > 0
+                    ? buildQuestionStatus(questionIds, saved)
+                    : generateInitialQuestionStatus(totalCount);
+
+                if (!questionIds.length && data.examData.savedAnswers) {
+                    initialStatus = initialStatus.map(q => ({
+                        ...q,
+                        status: saved[q.id] ? 'answered' : 'unanswered'
+                    }));
+                }
+
+                setQuestionStatus(initialStatus);
 
                 // Restore time remaining if any
                 if (data.examData.timeRemaining) {
@@ -360,15 +556,17 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
 
     // Navigate to a specific question
     const goToQuestion = useCallback((index) => {
-        if (index >= 0 && index < TOTAL_QUESTIONS) {
+        if (index >= 0 && index < totalQuestions) {
             setCurrentQuestionIndex(index);
         }
-    }, []);
+    }, [totalQuestions]);
 
     // Go to next question
     const goToNextQuestion = useCallback(() => {
-        setCurrentQuestionIndex((prev) => Math.min(prev + 1, TOTAL_QUESTIONS - 1));
-    }, []);
+        if (totalQuestions <= 0) return;
+        const maxIndex = Math.max(totalQuestions - 1, 0);
+        setCurrentQuestionIndex((prev) => Math.min(prev + 1, maxIndex));
+    }, [totalQuestions]);
 
     // Go to previous question
     const goToPrevQuestion = useCallback(() => {
@@ -425,7 +623,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         answers,
         questionStatus,
         isTimerRunning,
-        totalQuestions: TOTAL_QUESTIONS,
+        totalQuestions,
         goToQuestion,
         goToNextQuestion,
         goToPrevQuestion,
