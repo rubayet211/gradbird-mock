@@ -340,7 +340,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
             setNotes(storedNotes);
             setWritingResponses(storedWriting);
         }
-    }, [sessionId]);
+    }, [sessionId, activeModule]);
 
     // Save highlights to localStorage when they change
     useEffect(() => {
