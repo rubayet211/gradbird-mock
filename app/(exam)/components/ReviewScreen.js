@@ -17,7 +17,9 @@ export default function ReviewScreen() {
 
     // Calculate stats
     const totalQuestions = questionStatus.length;
-    const answeredCount = Object.keys(answers).length;
+    const answeredCount = questionStatus.reduce((count, question) => {
+        return answers[question.id] ? count + 1 : count;
+    }, 0);
     const flaggedCount = questionStatus.filter(q => q.status === 'flagged').length;
     const unansweredCount = totalQuestions - answeredCount;
 
