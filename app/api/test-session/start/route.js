@@ -51,6 +51,7 @@ export async function POST(request) {
             success: true,
             sessionId: testSession._id.toString(),
             mockTestTitle: selectedMockTest.title,
+            moduleType: selectedMockTest.moduleType || 'Full',
         });
     } catch (error) {
         console.error('Error starting test session:', error);

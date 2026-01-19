@@ -14,7 +14,9 @@ export default function ExamFooter() {
         answers,
     } = useExam();
 
-    const currentQuestionId = currentQuestionIndex + 1;
+    const currentQuestion = questionStatus[currentQuestionIndex];
+    const currentQuestionId = currentQuestion?.id;
+    const currentQuestionNumber = currentQuestionIndex + 1;
 
     return (
         <footer className="bg-gray-900 text-white px-4 py-3 select-none">
@@ -48,7 +50,7 @@ export default function ExamFooter() {
                                             </svg>
                                         </div>
                                     )}
-                                    {question.id}
+                                    {index + 1}
                                 </button>
                             );
                         })}
@@ -61,7 +63,11 @@ export default function ExamFooter() {
                 {/* Left: Flag and Review Buttons */}
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => toggleFlag(currentQuestionId)}
+                        onClick={() => {
+                            if (currentQuestionId !== undefined) {
+                                toggleFlag(currentQuestionId);
+                            }
+                        }}
                         className={`
                             flex items-center gap-2 px-4 py-2 rounded-lg transition-colors border
                             ${questionStatus[currentQuestionIndex]?.status === 'flagged'
@@ -89,7 +95,7 @@ export default function ExamFooter() {
 
                 {/* Center: Question Indicator */}
                 <div className="text-gray-400">
-                    Question <span className="text-white font-bold">{currentQuestionId}</span> of{' '}
+                    Question <span className="text-white font-bold">{currentQuestionNumber}</span> of{' '}
                     <span className="text-white">{totalQuestions}</span>
                 </div>
 
