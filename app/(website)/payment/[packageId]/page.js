@@ -18,7 +18,8 @@ async function getPackage(id) {
 }
 
 export default async function PaymentPage({ params }) {
-    const pkg = await getPackage(params.packageId);
+    const { packageId } = await params;
+    const pkg = await getPackage(packageId);
 
     if (!pkg) {
         notFound();

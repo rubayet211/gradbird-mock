@@ -193,6 +193,286 @@ const getDefaultQuestionCount = (activeModule) => {
     return 40;
 };
 
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
+const isBlockQuestion = (question) => {
+    if (!question || typeof question !== 'object') return false;
+    return (
+        typeof question.data === 'object' ||
+        question.heading ||
+        question.instruction ||
+        question.startId ||
+        question.startNumber
+    );
+};
+
+const normalizeOptionStrings = (options) => {
+    return asArray(options)
+        .map((option) => {
+            if (typeof option === 'string') return option;
+            if (option && typeof option === 'object') {
+                return option.text || option.label || '';
+            }
+            return '';
+        })
+        .filter((option) => option);
+};
+
+const normalizeOptionObjects = (options) => {
+    return asArray(options)
+        .map((option, index) => {
+            if (option && typeof option === 'object') {
+                return {
+                    id: option.id || String.fromCharCode(65 + index),
+                    text: option.text || option.label || '',
+                };
+            }
+            if (typeof option === 'string') {
+                return {
+                    id: String.fromCharCode(65 + index),
+                    text: option,
+                };
+            }
+            return null;
+        })
+        .filter((option) => option && option.text);
+};
+
+const normalizeMatchingItems = (items, baseId) => {
+    return asArray(items).map((item, index) => ({
+        id: item?.id || `${baseId}-${index + 1}`,
+        text: item?.text || '',
+    }));
+};
+
+const normalizeDropZones = (dropZones, startId, baseId) => {
+    return asArray(dropZones).map((zone, index) => ({
+        id: zone?.id || `${baseId}-zone-${index + 1}`,
+        x: typeof zone?.x === 'number' ? zone.x : 50,
+        y: typeof zone?.y === 'number' ? zone.y : 50,
+        questionId: zone?.questionId ?? startId + index,
+    }));
+};
+
+const normalizeDiagramQuestions = (questions, startId, baseId) => {
+    return asArray(questions).map((question, index) => ({
+        id: question?.id || `${baseId}-${startId + index}`,
+        x: typeof question?.x === 'number' ? question.x : 50,
+        y: typeof question?.y === 'number' ? question.y : 50,
+        label: question?.label || '',
+    }));
+};
+
+const countQuestionsForBlock = (block) => {
+    if (!block) return 0;
+    if (Array.isArray(block.items)) return block.items.length;
+    if (block.type === 'Matching' && Array.isArray(block.data?.items)) return block.data.items.length;
+    if ((block.type === 'MapLabeling' || block.type === 'DiagramLabeling') && Array.isArray(block.data?.dropZones)) {
+        return block.data.dropZones.length;
+    }
+    if (Array.isArray(block.data?.questions)) return block.data.questions.length;
+    if (block.type === 'MultipleAnswer') return 1;
+    if (block.id !== undefined) return 1;
+    return 0;
+};
+
+const normalizeExistingBlock = (block, counterRef) => {
+    if (!block || typeof block !== 'object') return block;
+    const normalized = { ...block };
+    const count = Math.max(1, countQuestionsForBlock(normalized));
+    const startId = Number(normalized.startId ?? normalized.startNumber);
+
+    if (!Number.isFinite(startId)) {
+        normalized.startId = counterRef.value;
+        counterRef.value += count;
+    } else {
+        normalized.startId = startId;
+        counterRef.value = Math.max(counterRef.value, startId + count);
+    }
+
+    if (normalized.data && !normalized.data.instruction && normalized.instruction) {
+        normalized.data = {
+            ...normalized.data,
+            instruction: normalized.instruction,
+        };
+    }
+
+    return normalized;
+};
+
+const normalizeFlatQuestion = (question, module, counterRef) => {
+    const type = question?.type || 'MCQ';
+    const heading = question?.heading || `Question ${counterRef.value}`;
+    const instruction = question?.instruction || '';
+    const startId = counterRef.value;
+    const baseId = question?.id || `${module}-${startId}`;
+
+    let block;
+    switch (type) {
+        case 'TrueFalse':
+            block = {
+                type,
+                heading,
+                instruction,
+                startId,
+                items: [{
+                    id: question?.id || startId,
+                    text: question?.text || '',
+                }],
+            };
+            break;
+        case 'GapFill':
+            block = {
+                type,
+                heading,
+                instruction,
+                startId,
+                data: {
+                    id: baseId,
+                    instruction,
+                    questions: [{
+                        id: question?.id || startId,
+                        text: question?.text || '',
+                        wordLimit: question?.wordLimit,
+                    }],
+                },
+            };
+            break;
+        case 'ShortAnswer':
+            block = {
+                type,
+                heading,
+                instruction,
+                startId,
+                data: {
+                    id: baseId,
+                    instruction,
+                    wordLimitDescription: question?.wordLimit ? `Write NO MORE THAN ${question.wordLimit} WORDS` : undefined,
+                    questions: [{
+                        id: question?.id || startId,
+                        text: question?.text || '',
+                        wordLimit: question?.wordLimit,
+                    }],
+                },
+            };
+            break;
+        case 'Matching':
+            block = {
+                type,
+                heading,
+                instruction,
+                startId,
+                data: {
+                    id: baseId,
+                    instruction,
+                    items: normalizeMatchingItems(question?.items, baseId),
+                    options: normalizeOptionStrings(question?.options),
+                },
+            };
+            break;
+        case 'MapLabeling':
+            block = {
+                type,
+                heading,
+                instruction,
+                startId,
+                data: {
+                    id: baseId,
+                    instruction,
+                    imageUrl: question?.imageUrl || '',
+                    dropZones: normalizeDropZones(question?.dropZones, startId, baseId),
+                    labels: normalizeOptionStrings(question?.labels),
+                },
+            };
+            break;
+        case 'DiagramLabeling':
+            block = {
+                type,
+                heading,
+                instruction,
+                startId,
+                data: {
+                    id: baseId,
+                    instruction,
+                    imageUrl: question?.imageUrl || '',
+                    questions: normalizeDiagramQuestions(question?.questions, startId, baseId),
+                },
+            };
+            break;
+        case 'MultipleAnswer':
+            block = {
+                type,
+                heading,
+                instruction,
+                startId,
+                data: {
+                    id: question?.id || startId,
+                    instruction,
+                    text: question?.text || '',
+                    options: normalizeOptionObjects(question?.options),
+                    requiredCount: question?.requiredCount || 2,
+                },
+            };
+            break;
+        case 'MCQ':
+        default:
+            block = {
+                type: 'MCQ',
+                heading,
+                instruction,
+                startId,
+                items: [{
+                    id: question?.id || startId,
+                    text: question?.text || '',
+                    options: normalizeOptionStrings(question?.options),
+                }],
+            };
+            break;
+    }
+
+    counterRef.value += Math.max(1, countQuestionsForBlock(block));
+    return block;
+};
+
+const normalizeQuestionBlocks = (questions, module, counterRef) => {
+    const list = asArray(questions);
+    return list.map((item) => {
+        if (isBlockQuestion(item)) {
+            return normalizeExistingBlock(item, counterRef);
+        }
+        return normalizeFlatQuestion(item, module, counterRef);
+    });
+};
+
+const normalizeExamData = (examData) => {
+    if (!examData || typeof examData !== 'object') return examData;
+    const normalized = { ...examData };
+
+    if (examData.reading?.sections) {
+        const counterRef = { value: 1 };
+        normalized.reading = {
+            ...examData.reading,
+            sections: examData.reading.sections.map((section) => ({
+                ...section,
+                questions: normalizeQuestionBlocks(section.questions, 'reading', counterRef),
+            })),
+        };
+    }
+
+    if (examData.listening?.parts) {
+        const counterRef = { value: 1 };
+        normalized.listening = {
+            ...examData.listening,
+            parts: examData.listening.parts.map((part) => ({
+                ...part,
+                questions: normalizeQuestionBlocks(part.questions, 'listening', counterRef),
+            })),
+        };
+    }
+
+    return normalized;
+};
+
 export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }) {
     const searchParams = useSearchParams();
     const activeModule = (searchParams?.get('module') || 'reading').toLowerCase();
@@ -377,25 +657,36 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                 const data = await response.json();
 
                 if (!response.ok) {
+                    const isDev = process.env.NODE_ENV !== 'production';
+                    if (isDev && response.status === 404) {
+                        const fallbackCount = getDefaultQuestionCount(activeModule);
+                        setTotalQuestions(fallbackCount);
+                        setQuestionStatus(generateInitialQuestionStatus(fallbackCount));
+                        setExamData(null);
+                        setLoadError(null);
+                        return;
+                    }
                     throw new Error(data.error || 'Failed to fetch exam data');
                 }
 
+                const normalizedExamData = normalizeExamData(data.examData);
+
                 // Calculate total questions based on the active module
-                let count = resolveQuestionCount(data.examData, activeModule);
+                let count = resolveQuestionCount(normalizedExamData, activeModule);
 
                 // Fallback default if calculation fails (e.g. empty test or error)
                 if (count === 0) count = getDefaultQuestionCount(activeModule);
 
-                const questionIds = getQuestionIdsFromExamData(data.examData, activeModule);
+                const questionIds = getQuestionIdsFromExamData(normalizedExamData, activeModule);
                 const totalCount = questionIds.length > 0 ? questionIds.length : count;
 
                 setTotalQuestions(totalCount);
-                setExamData(data.examData);
+                setExamData(normalizedExamData);
 
-                const saved = data.examData.savedAnswers || {};
+                const saved = normalizedExamData?.savedAnswers || {};
 
                 // Restore saved answers if any
-                if (data.examData.savedAnswers) {
+                if (normalizedExamData?.savedAnswers) {
                     setAnswers(saved);
                 }
 
@@ -404,7 +695,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                     ? buildQuestionStatus(questionIds, saved)
                     : generateInitialQuestionStatus(totalCount);
 
-                if (!questionIds.length && data.examData.savedAnswers) {
+                if (!questionIds.length && normalizedExamData?.savedAnswers) {
                     initialStatus = initialStatus.map(q => ({
                         ...q,
                         status: saved[q.id] ? 'answered' : 'unanswered'
@@ -414,8 +705,8 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                 setQuestionStatus(initialStatus);
 
                 // Restore time remaining if any
-                if (data.examData.timeRemaining) {
-                    setTimeLeft(data.examData.timeRemaining);
+                if (normalizedExamData?.timeRemaining) {
+                    setTimeLeft(normalizedExamData.timeRemaining);
                 }
             } catch (error) {
                 console.error('Error fetching exam data:', error);

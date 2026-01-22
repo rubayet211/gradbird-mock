@@ -21,6 +21,10 @@ const UserSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    purchasedPackages: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Package',
+    }],
     createdAt: {
         type: Date,
         default: Date.now,

@@ -14,7 +14,7 @@ export const LISTENING_EXAM_DATA = {
             id: 'part-1',
             partNumber: 1,
             title: 'Part 1: A Conversation About Booking a Hotel',
-            audioUrl: '/audio/listening-part1.mp3', // Placeholder URL
+            audioUrl: '',
             transcript: `Agent: Good morning, Sunshine Hotels, how can I help you today?
 Customer: Hi, I'd like to book a room for next weekend please.
 Agent: Certainly. Which dates are you looking at?
@@ -67,7 +67,7 @@ Agent: Perfect. Your booking reference is HP2847. You'll receive confirmation by
             id: 'part-2',
             partNumber: 2,
             title: 'Part 2: Tour of the University Library',
-            audioUrl: '/audio/listening-part2.mp3',
+            audioUrl: '',
             transcript: `Welcome to the university library orientation. I'm going to give you a brief tour of our facilities today. 
 
 As you enter through the main entrance, you'll see the information desk directly in front of you. To your left is the computer lab, which has 50 workstations available for student use. 
@@ -123,7 +123,7 @@ The café is located on the ground floor, next to the computer lab. It's open fr
             id: 'part-3',
             partNumber: 3,
             title: 'Part 3: Academic Discussion on Research Projects',
-            audioUrl: '/audio/listening-part3.mp3',
+            audioUrl: '',
             transcript: `Tutor: So, let's discuss the progress on your group research project. Sarah, you're leading the team. How are things going?
 
 Sarah: Well, Professor, we've divided the work among the three of us. I'm handling the literature review, and I've found some really interesting recent studies.
@@ -185,7 +185,7 @@ Sarah: And I'll compile everything for the final submission in January.`,
             id: 'part-4',
             partNumber: 4,
             title: 'Part 4: Lecture on Climate Change and Agriculture',
-            audioUrl: '/audio/listening-part4.mp3',
+            audioUrl: '',
             transcript: `Today's lecture focuses on the impact of climate change on global agriculture. As temperatures rise, we're seeing significant shifts in growing seasons and crop yields worldwide.
 
 Research shows that for every degree Celsius increase in global temperature, wheat yields decrease by approximately 6%. This has serious implications for food security, particularly in developing nations.

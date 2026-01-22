@@ -5,16 +5,42 @@ import Link from 'next/link';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import StartTestButton from './StartTestButton';
+import UserMockList from './UserMockList';
+import Package from '@/models/Package'; // Ensure Package is registered
 
 export const dynamic = 'force-dynamic';
 
 async function getUserData(userId) {
     await connectDB();
-    const user = await User.findById(userId).lean();
+    // Populate packages and their mocks
+    const user = await User.findById(userId)
+        .populate({
+            path: 'purchasedPackages',
+            populate: { path: 'mocks', select: 'title moduleType type' }
+        })
+        .lean();
+
     if (!user) return null;
+
+    // Flatten unique mocks logic
+    const uniqueMocksMap = new Map();
+    if (user.purchasedPackages) {
+        user.purchasedPackages.forEach(pkg => {
+            if (pkg.mocks) {
+                pkg.mocks.forEach(mock => {
+                    uniqueMocksMap.set(mock._id.toString(), {
+                        ...mock,
+                        _id: mock._id.toString() // Ensure string ID
+                    });
+                });
+            }
+        });
+    }
+
     return {
         ...user,
         _id: user._id.toString(),
+        availableMocks: Array.from(uniqueMocksMap.values()),
     };
 }
 
@@ -148,7 +174,7 @@ export default async function DashboardPage() {
                         }
                     />
                     <StatCard
-                        title="Mocks Remaining"
+                        title="Credit Mocks Remaining"
                         value={mocksRemaining}
                         color="amber"
                         icon={
@@ -159,19 +185,29 @@ export default async function DashboardPage() {
                     />
                 </div>
 
-                {/* My Tests Section */}
-                <div className="mt-8">
+                {/* New Section: Available Specific Mocks */}
+                {user.availableMocks && user.availableMocks.length > 0 && (
+                    <div className="mt-12">
+                        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Your Purchased Mock Tests</h2>
+                        <UserMockList mocks={user.availableMocks} />
+                    </div>
+                )}
+
+
+                {/* My Tests History Section */}
+                <div className="mt-12">
                     <div className="bg-white dark:bg-zinc-800 shadow-md rounded-xl overflow-hidden">
                         <div className="px-6 py-5 border-b border-gray-200 dark:border-zinc-700 flex items-center justify-between">
-                            <h2 className="text-lg font-medium text-gray-900 dark:text-white">My Tests</h2>
-                            {mocksRemaining > 0 ? (
+                            <h2 className="text-lg font-medium text-gray-900 dark:text-white">Recent Activity</h2>
+                            {mocksRemaining > 0 && (
                                 <StartTestButton />
-                            ) : (
+                            )}
+                            {mocksRemaining <= 0 && (!user.availableMocks || user.availableMocks.length === 0) && (
                                 <Link
-                                    href="/payment"
+                                    href="/packages"
                                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
                                 >
-                                    Buy Mock Tests
+                                    Buy Packages
                                 </Link>
                             )}
                         </div>
@@ -210,8 +246,8 @@ export default async function DashboardPage() {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${!testSession.mockTest?.moduleType || testSession.mockTest?.moduleType === 'Full'
-                                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                                            : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                                        : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
                                                         }`}>
                                                         {testSession.mockTest?.moduleType || 'Full'}
                                                     </span>
@@ -264,7 +300,7 @@ export default async function DashboardPage() {
                                     </svg>
                                     <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No tests taken yet</h3>
                                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                        Get started by taking your first mock test.
+                                        Get started by purchasing a package or taking a trial.
                                     </p>
                                 </div>
                             )}

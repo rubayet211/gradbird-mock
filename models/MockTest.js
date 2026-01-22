@@ -33,6 +33,12 @@ const MockTestSchema = new mongoose.Schema({
                 correctAnswer: mongoose.Schema.Types.Mixed, // String or Array for multiple answers
                 // For GapFill
                 wordLimit: Number,
+                // For Matching
+                items: [{
+                    id: String,
+                    text: String,
+                    correctAnswer: String,
+                }],
                 // For MapLabeling
                 imageUrl: String,
                 dropZones: [{
@@ -40,8 +46,17 @@ const MockTestSchema = new mongoose.Schema({
                     x: Number, // percentage
                     y: Number, // percentage
                     label: String,
+                    correctAnswer: String,
                 }],
                 labels: [String], // draggable labels
+                // For DiagramLabeling
+                questions: [{
+                    id: String,
+                    x: Number, // percentage
+                    y: Number, // percentage
+                    label: String,
+                    correctAnswer: String,
+                }],
             }],
         }],
     },
@@ -58,6 +73,31 @@ const MockTestSchema = new mongoose.Schema({
                 text: String,
                 options: [String],
                 correctAnswer: String,
+                // For Matching
+                items: [{
+                    id: String,
+                    text: String,
+                    correctAnswer: String,
+                }],
+                // For DiagramLabeling / MapLabeling
+                imageUrl: String,
+                questions: [{
+                    id: String,
+                    x: Number, // percentage
+                    y: Number, // percentage
+                    label: String,
+                    correctAnswer: String,
+                }],
+                dropZones: [{
+                    id: String,
+                    x: Number, // percentage
+                    y: Number, // percentage
+                    label: String,
+                    correctAnswer: String,
+                }],
+                labels: [String],
+                // For MultipleAnswer
+                requiredCount: Number,
             }],
         }],
     },

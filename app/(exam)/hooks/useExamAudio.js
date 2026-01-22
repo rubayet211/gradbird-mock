@@ -28,9 +28,17 @@ export function useExamAudio({ audioUrl, volume = 1, onEnded, disabled = false }
 
     // Create audio element on mount
     useEffect(() => {
-        if (!audioUrl) return;
+        const normalizedUrl = typeof audioUrl === 'string' ? audioUrl.trim() : '';
 
-        const audio = new Audio(audioUrl);
+        setError(null);
+        setIsLoaded(false);
+        setDuration(0);
+        setCurrentTime(0);
+        trackedTimeRef.current = 0;
+
+        if (!normalizedUrl) return;
+
+        const audio = new Audio(normalizedUrl);
         audioRef.current = audio;
 
         // Event handlers
@@ -54,9 +62,20 @@ export function useExamAudio({ audioUrl, volume = 1, onEnded, disabled = false }
         const handlePlay = () => setIsPlaying(true);
         const handlePause = () => setIsPlaying(false);
 
-        const handleError = (e) => {
-            console.error('Audio error:', e);
-            setError('Failed to load audio');
+        const handleError = () => {
+            const mediaError = audio.error;
+            const code = mediaError?.code;
+            const message = code === 1
+                ? 'Audio loading was aborted'
+                : code === 2
+                    ? 'Network error while loading audio'
+                    : code === 3
+                        ? 'Audio decoding failed'
+                        : code === 4
+                            ? 'Audio format not supported'
+                            : 'Failed to load audio';
+            setError(message);
+            setIsLoaded(false);
         };
 
         // CRITICAL: Prevent seeking by forcing time back to tracked position
@@ -109,12 +128,12 @@ export function useExamAudio({ audioUrl, volume = 1, onEnded, disabled = false }
 
     // Manual play trigger (for user interaction requirement)
     const play = useCallback(() => {
-        if (audioRef.current && !disabled) {
+        if (audioRef.current && !disabled && !error) {
             audioRef.current.play().catch(err => {
                 console.error('Play failed:', err);
             });
         }
-    }, [disabled]);
+    }, [disabled, error]);
 
     // Pause is NOT exposed to users, but used internally
     const pause = useCallback(() => {
