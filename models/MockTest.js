@@ -20,7 +20,7 @@ const MockTestSchema = new mongoose.Schema({
         parts: [{
             partNumber: { type: Number, required: true },
             title: String,
-            audioUrl: { type: String, required: true },
+            audioUrl: { type: String, default: '' },
             transcript: String,
             questions: [{
                 id: String,
