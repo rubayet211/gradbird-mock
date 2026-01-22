@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import connectDB from '@/lib/db';
 import TestSession from '@/models/TestSession';
+import MockTest from '@/models/MockTest';
+import {
+    extractQuestionSchema,
+    validateAnswers,
+    validateWritingResponses
+} from '@/lib/answerValidation';
 
 /**
  * POST /api/exam/save-progress
@@ -39,6 +45,51 @@ export async function POST(request) {
         // Check if session is still active
         if (testSession.status === 'completed') {
             return NextResponse.json({ error: 'Exam already completed' }, { status: 400 });
+        }
+
+        // Fetch MockTest for schema validation
+        const mockTest = await MockTest.findById(testSession.mockTest);
+
+        // Validate answers if present (non-blocking - logs warnings but still saves)
+        if (answers && mockTest) {
+            // Validate reading answers
+            if (answers.reading && mockTest.reading?.sections) {
+                const readingSchema = extractQuestionSchema(mockTest, 'reading');
+                const readingValidation = validateAnswers(answers.reading, readingSchema);
+                if (readingValidation.warnings.length > 0) {
+                    console.warn('[Answer Validation] Reading warnings:', readingValidation.warnings);
+                }
+                if (readingValidation.errors.length > 0) {
+                    console.error('[Answer Validation] Reading errors:', readingValidation.errors);
+                }
+            }
+
+            // Validate listening answers
+            if (answers.listening && mockTest.listening?.parts) {
+                const listeningSchema = extractQuestionSchema(mockTest, 'listening');
+                const listeningValidation = validateAnswers(answers.listening, listeningSchema);
+                if (listeningValidation.warnings.length > 0) {
+                    console.warn('[Answer Validation] Listening warnings:', listeningValidation.warnings);
+                }
+                if (listeningValidation.errors.length > 0) {
+                    console.error('[Answer Validation] Listening errors:', listeningValidation.errors);
+                }
+            }
+        }
+
+        // Validate writing responses if present (blocking - returns error on invalid format)
+        if (writingResponses) {
+            const writingValidation = validateWritingResponses(writingResponses);
+            if (!writingValidation.valid) {
+                console.error('[Answer Validation] Writing errors:', writingValidation.errors);
+                return NextResponse.json({
+                    error: 'Invalid writing response format',
+                    details: writingValidation.errors
+                }, { status: 400 });
+            }
+            if (writingValidation.warnings.length > 0) {
+                console.warn('[Answer Validation] Writing warnings:', writingValidation.warnings);
+            }
         }
 
         // Update session with progress

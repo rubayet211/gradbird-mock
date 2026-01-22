@@ -13,6 +13,22 @@ import DiagramLabeling from './DiagramLabeling';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
 import { READING_EXAM_DATA } from '../data/reading-data';
 
+
+function getTextNodes(element) {
+    const textNodes = [];
+    const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    let node;
+    while ((node = walker.nextNode())) {
+        textNodes.push(node);
+    }
+    return textNodes;
+}
+
 export default function ReadingInterface() {
     const {
         setAnswer,
@@ -62,28 +78,7 @@ export default function ReadingInterface() {
     const currentSection = readingData.sections[currentSectionIndex] || readingData.sections[0];
 
     // Show loading state
-    if (isLoading) {
-        return (
-            <div className="flex-1 flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading exam...</p>
-                </div>
-            </div>
-        );
-    }
 
-    // Show error state
-    if (loadError) {
-        return (
-            <div className="flex-1 flex items-center justify-center bg-gray-50">
-                <div className="text-center text-red-600">
-                    <p className="text-lg font-medium">Error loading exam</p>
-                    <p className="text-sm mt-2">{loadError}</p>
-                </div>
-            </div>
-        );
-    }
 
     // Restore highlights from context on passage change
     useEffect(() => {
@@ -128,20 +123,7 @@ export default function ReadingInterface() {
         });
     }, [highlights, notes, isRestored, currentSectionIndex]);
 
-    function getTextNodes(element) {
-        const textNodes = [];
-        const walker = document.createTreeWalker(
-            element,
-            NodeFilter.SHOW_TEXT,
-            null,
-            false
-        );
-        let node;
-        while ((node = walker.nextNode())) {
-            textNodes.push(node);
-        }
-        return textNodes;
-    }
+
 
     const handleHighlightClick = useCallback((e) => {
         const span = e.target.closest('[data-highlight-id]');
@@ -272,6 +254,30 @@ export default function ReadingInterface() {
         setSelectedTextForNote('');
     }, [selectedRange, addNote, addHighlight, currentSection.id]);
 
+    // Show loading state
+    if (isLoading) {
+        return (
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading exam...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show error state
+    if (loadError) {
+        return (
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+                <div className="text-center text-red-600">
+                    <p className="text-lg font-medium">Error loading exam</p>
+                    <p className="text-sm mt-2">{loadError}</p>
+                </div>
+            </div>
+        );
+    }
+
     const handleAnswerChange = (questionId, value) => {
         setAnswer(questionId, value);
     };
@@ -386,6 +392,59 @@ export default function ReadingInterface() {
                                                     key={option}
                                                     className={`
                                                         flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer transition-all
+                                                        ${answers[q.id] === option
+                                                            ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                                            : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                                                        }
+                                                    `}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name={`question-${q.id}`}
+                                                        value={option}
+                                                        checked={answers[q.id] === option}
+                                                        onChange={() => handleAnswerChange(q.id, option)}
+                                                        className="sr-only"
+                                                        disabled={isExamEnded}
+                                                    />
+                                                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${answers[q.id] === option ? 'border-blue-600 bg-blue-600' : 'border-gray-400'}`}>
+                                                        {answers[q.id] === option && <span className="w-1.5 h-1.5 bg-white rounded-full"></span>}
+                                                    </span>
+                                                    <span className="text-sm font-medium">{option}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            case 'MCQ':
+                return (
+                    <div key={blockIndex} className="mt-10 pt-6 border-t-2 border-gray-300">
+                        <div className="mb-6 pb-4 border-b border-gray-200">
+                            <h2 className="text-xl font-bold text-gray-800">{questionBlock.heading}</h2>
+                            <p className="mt-2 text-sm text-gray-600">{questionBlock.instruction}</p>
+                        </div>
+                        {questionBlock.items.map((q) => (
+                            <div
+                                key={q.id}
+                                className="rounded-xl shadow-sm border p-5 transition-all hover:shadow-md mb-4"
+                                style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)', color: 'var(--text-color)' }}
+                            >
+                                <div className="flex gap-4">
+                                    <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                        {q.id}
+                                    </span>
+                                    <div className="flex-1">
+                                        <p className="font-medium mb-4" style={{ color: 'var(--text-color)' }}>{q.text}</p>
+                                        <div className="space-y-2">
+                                            {q.options.map((option, optIdx) => (
+                                                <label
+                                                    key={optIdx}
+                                                    className={`
+                                                        flex items-center gap-3 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all
                                                         ${answers[q.id] === option
                                                             ? 'border-blue-600 bg-blue-50 text-blue-700'
                                                             : 'border-gray-200 hover:border-gray-300 text-gray-600'
