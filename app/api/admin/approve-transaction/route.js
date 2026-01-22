@@ -43,12 +43,29 @@ export async function PATCH(req) {
         transaction.status = 'approved';
         await transaction.save();
 
-        // 4. Credit User with Mocks
+        // 4. Credit User with Mocks/Package
         // The transaction has a user field (ObjectId).
         const targetUser = await User.findById(transaction.user);
         if (targetUser) {
-            const mocksToAdd = transaction.package.totalMocks || 0;
-            targetUser.mocksAvailable = (targetUser.mocksAvailable || 0) + mocksToAdd;
+            const pkg = transaction.package;
+
+            // Check if package has specific mocks (Content Package)
+            if (pkg.mocks && pkg.mocks.length > 0) {
+                // Add package to user's purchasedPackages (avoid duplicates)
+                if (!targetUser.purchasedPackages.includes(pkg._id)) {
+                    targetUser.purchasedPackages.push(pkg._id);
+                }
+                // Also increment mocksAvailable if it's used as a generic counter for "how many mocks can I take"
+                // But if the system is shifting to specific access, better not to confuse it.
+                // However, for safety/hybrid support:
+                // targetUser.mocksAvailable = (targetUser.mocksAvailable || 0) + (pkg.totalMocks || 0); 
+                // I will NOT increment mocksAvailable if it's a specific package purchase to prevents reusing credits on other mocks.
+            } else {
+                // Legacy Credit Package (No specific mocks, just count)
+                const mocksToAdd = pkg.totalMocks || 0;
+                targetUser.mocksAvailable = (targetUser.mocksAvailable || 0) + mocksToAdd;
+            }
+
             await targetUser.save();
         }
 

@@ -19,7 +19,7 @@ async function getUserData(userId) {
 
 const navItems = [
     { name: 'My Tests', href: '/dashboard', icon: 'clipboard' },
-    { name: 'Buy Packages', href: '/payment', icon: 'shopping-cart' },
+    { name: 'Buy Packages', href: '/packages', icon: 'shopping-cart' },
     { name: 'Book Speaking', href: '/dashboard/speaking', icon: 'calendar' },
     { name: 'Results', href: '/dashboard/results', icon: 'chart' },
     { name: 'Settings', href: '/dashboard/settings', icon: 'cog' }, // Added Settings

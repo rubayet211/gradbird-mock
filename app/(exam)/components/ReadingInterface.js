@@ -374,7 +374,15 @@ export default function ReadingInterface() {
                             <h2 className="text-xl font-bold text-gray-800">{questionBlock.heading}</h2>
                             <p className="mt-2 text-sm text-gray-600">{questionBlock.instruction}</p>
                         </div>
-                        {questionBlock.items.map((q) => (
+                        {questionBlock.items.map((q, itemIndex) => {
+                            const base = Number(questionBlock.startId ?? questionBlock.startNumber);
+                            const itemNumber = Number(q.id);
+                            const displayNumber = Number.isFinite(itemNumber)
+                                ? itemNumber
+                                : Number.isFinite(base)
+                                    ? base + itemIndex
+                                    : q.id;
+                            return (
                             <div
                                 key={q.id}
                                 className="rounded-xl shadow-sm border p-5 transition-all hover:shadow-md mb-4"
@@ -382,7 +390,7 @@ export default function ReadingInterface() {
                             >
                                 <div className="flex gap-4">
                                     <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                                        {q.id}
+                                        {displayNumber}
                                     </span>
                                     <div className="flex-1">
                                         <p className="font-medium mb-4" style={{ color: 'var(--text-color)' }}>{q.text}</p>
@@ -417,7 +425,8 @@ export default function ReadingInterface() {
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        );
+                        })}
                     </div>
                 );
             case 'MCQ':
@@ -427,7 +436,15 @@ export default function ReadingInterface() {
                             <h2 className="text-xl font-bold text-gray-800">{questionBlock.heading}</h2>
                             <p className="mt-2 text-sm text-gray-600">{questionBlock.instruction}</p>
                         </div>
-                        {questionBlock.items.map((q) => (
+                        {questionBlock.items.map((q, itemIndex) => {
+                            const base = Number(questionBlock.startId ?? questionBlock.startNumber);
+                            const itemNumber = Number(q.id);
+                            const displayNumber = Number.isFinite(itemNumber)
+                                ? itemNumber
+                                : Number.isFinite(base)
+                                    ? base + itemIndex
+                                    : q.id;
+                            return (
                             <div
                                 key={q.id}
                                 className="rounded-xl shadow-sm border p-5 transition-all hover:shadow-md mb-4"
@@ -435,7 +452,7 @@ export default function ReadingInterface() {
                             >
                                 <div className="flex gap-4">
                                     <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                                        {q.id}
+                                        {displayNumber}
                                     </span>
                                     <div className="flex-1">
                                         <p className="font-medium mb-4" style={{ color: 'var(--text-color)' }}>{q.text}</p>
@@ -470,7 +487,8 @@ export default function ReadingInterface() {
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        );
+                        })}
                     </div>
                 );
             case 'Matching':
