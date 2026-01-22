@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from 'react';
+import AudioUploader from '../../../components/AudioUploader';
+import ImageUploader from '../../../components/ImageUploader';
 
 export default function Step2Listening({ data, updateData }) {
     const [activePartIndex, setActivePartIndex] = useState(0);
@@ -101,17 +103,13 @@ export default function Step2Listening({ data, updateData }) {
                     />
                 </div>
 
-                {/* Audio URL */}
+                {/* Audio Upload */}
                 <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Audio URL</label>
-                    <input
-                        type="text"
+                    <label className="block text-sm font-medium text-gray-700">Audio File</label>
+                    <AudioUploader
                         value={activePart.audioUrl || ''}
-                        onChange={(e) => updatePart(activePartIndex, 'audioUrl', e.target.value)}
-                        placeholder="https://s3.aws.com/audio/part1.mp3"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        onChange={(url) => updatePart(activePartIndex, 'audioUrl', url)}
                     />
-                    <p className="text-xs text-gray-400">Direct link to the audio file for this part</p>
                 </div>
 
                 {/* Transcript */}
@@ -245,13 +243,11 @@ export default function Step2Listening({ data, updateData }) {
                                             <b>Map Labeling:</b> Provide an image and define drop zones (questions) and labels (options).
                                         </p>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">Image URL</label>
-                                            <input
-                                                type="text"
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Map Image</label>
+                                            <ImageUploader
                                                 value={q.imageUrl || ''}
-                                                onChange={(e) => updateQuestion(activePartIndex, qIndex, 'imageUrl', e.target.value)}
-                                                placeholder="https://example.com/map.png"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
+                                                onChange={(url) => updateQuestion(activePartIndex, qIndex, 'imageUrl', url)}
+                                                label="Upload map image (PNG, JPG)"
                                             />
                                         </div>
 
@@ -468,13 +464,11 @@ export default function Step2Listening({ data, updateData }) {
                                             <b>Diagram Labeling:</b> Provide an image and labels (questions) with coordinates.
                                         </p>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">Image URL</label>
-                                            <input
-                                                type="text"
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Diagram Image</label>
+                                            <ImageUploader
                                                 value={q.imageUrl || ''}
-                                                onChange={(e) => updateQuestion(activePartIndex, qIndex, 'imageUrl', e.target.value)}
-                                                placeholder="https://example.com/diagram.png"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
+                                                onChange={(url) => updateQuestion(activePartIndex, qIndex, 'imageUrl', url)}
+                                                label="Upload diagram image (PNG, JPG)"
                                             />
                                         </div>
 

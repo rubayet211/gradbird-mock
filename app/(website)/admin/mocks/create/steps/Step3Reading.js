@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import ImageUploader from '../../../components/ImageUploader';
 
 export default function Step3Reading({ data, updateData }) {
     const [activeSection, setActiveSection] = useState(0);
@@ -267,13 +268,11 @@ export default function Step3Reading({ data, updateData }) {
                                             <b>Diagram Labeling:</b> Provide an image and labels (questions) with coordinates.
                                         </p>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1">Image URL</label>
-                                            <input
-                                                type="text"
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Diagram Image</label>
+                                            <ImageUploader
                                                 value={q.imageUrl || ''}
-                                                onChange={(e) => updateQuestion(activeSection, qIndex, 'imageUrl', e.target.value)}
-                                                placeholder="https://example.com/diagram.png"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-sm"
+                                                onChange={(url) => updateQuestion(activeSection, qIndex, 'imageUrl', url)}
+                                                label="Upload diagram image (PNG, JPG)"
                                             />
                                         </div>
 
