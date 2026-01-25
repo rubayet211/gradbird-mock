@@ -6,6 +6,12 @@ import { Group, Panel, Separator, useDefaultLayout } from 'react-resizable-panel
  * Reusable split-pane component with draggable resize handle.
  * Persists user's preferred panel sizes to localStorage.
  */
+const fallbackStorage = {
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {},
+};
+
 export default function ResizableSplitPane({
     storageKey,
     leftPanel,
@@ -14,12 +20,13 @@ export default function ResizableSplitPane({
     minSize = 20,
 }) {
     // Use the hook for localStorage persistence
+    const storage =
+        typeof window !== 'undefined' && window.localStorage
+            ? window.localStorage
+            : fallbackStorage;
     const { defaultLayout, onLayoutChanged } = useDefaultLayout({
         id: storageKey,
-        storage:
-            typeof window !== 'undefined' && 'localStorage' in window
-                ? window.localStorage
-                : undefined,
+        storage,
     });
 
     return (

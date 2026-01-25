@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { sessionId } = params;
+        const { sessionId } = await params;
 
         await connectDB();
 
@@ -58,6 +58,12 @@ export async function GET(request, { params }) {
                         type: q.type,
                         text: q.text,
                         options: q.options || [],
+                        items: q.items,
+                        questions: q.questions,
+                        imageUrl: q.imageUrl,
+                        dropZones: q.dropZones,
+                        labels: q.labels,
+                        requiredCount: q.requiredCount,
                         // NOTE: correctAnswer is excluded for security
                     }))
                 }))
@@ -78,6 +84,8 @@ export async function GET(request, { params }) {
                         imageUrl: q.imageUrl,
                         dropZones: q.dropZones,
                         labels: q.labels,
+                        items: q.items,
+                        questions: q.questions,
                         // NOTE: correctAnswer is excluded for security
                     })) || [],
                 })) || [],

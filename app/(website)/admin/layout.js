@@ -26,6 +26,7 @@ export default function AdminLayout({ children }) {
                 <nav className="flex-1 p-4 space-y-1">
                     <NavLink href="/admin" icon={<DashboardIcon />}>Dashboard</NavLink>
                     <NavLink href="/admin/transactions" icon={<TransactionIcon />}>Transactions</NavLink>
+                    <NavLink href="/admin/packages" icon={<PackageIcon />}>Packages</NavLink>
                     <NavLink href="/admin/users" icon={<UsersIcon />}>Manage Users</NavLink>
                     <NavLink href="/admin/mocks" icon={<TestIcon />}>Mock Tests</NavLink>
                     <NavLink href="/admin/grading" icon={<GradingIcon />}>Grading</NavLink>
@@ -124,6 +125,14 @@ function LogoutIcon() {
     return (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+    )
+}
+
+function PackageIcon() {
+    return (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
     )
 }

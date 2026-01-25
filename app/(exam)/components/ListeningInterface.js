@@ -40,7 +40,17 @@ export default function ListeningInterface() {
         return LISTENING_EXAM_DATA;
     }, [examData]);
 
-    const currentPart = listeningData.parts[currentPartIndex] || listeningData.parts[0];
+    const parts = Array.isArray(listeningData?.parts) ? listeningData.parts : [];
+    const currentPart = parts[currentPartIndex] || parts[0] || {
+        partNumber: currentPartIndex + 1,
+        title: `Part ${currentPartIndex + 1}`,
+        questions: [],
+    };
+    const partQuestions = Array.isArray(currentPart?.questions) ? currentPart.questions : [];
+    const currentPartTitle = typeof currentPart?.title === 'string'
+        ? currentPart.title
+        : `Part ${currentPart.partNumber || currentPartIndex + 1}`;
+    const hasAudio = !!currentPart?.audioUrl;
 
     // Audio playback with strict controls
     const handleAudioEnded = useCallback(() => {
@@ -107,7 +117,7 @@ export default function ListeningInterface() {
                         </div>
                         <div>
                             <h2 className="text-xl font-bold">IELTS Listening</h2>
-                            <p className="text-green-200 text-sm">{currentPart.title}</p>
+                            <p className="text-green-200 text-sm">{currentPartTitle}</p>
                         </div>
                     </div>
 
@@ -128,7 +138,9 @@ export default function ListeningInterface() {
                     {/* Audio Status */}
                     <div className="flex items-center justify-center gap-4">
                         {listeningPhase === 'audio' ? (
-                            isPlaying ? (
+                            !hasAudio ? (
+                                <div className="text-sm text-green-200">Audio not configured</div>
+                            ) : isPlaying ? (
                                 <div className="flex items-center gap-2 text-green-200">
                                     <div className="flex gap-1">
                                         <span className="w-1 h-4 bg-white rounded animate-pulse"></span>
@@ -141,9 +153,12 @@ export default function ListeningInterface() {
                             ) : (
                                 <button
                                     onClick={play}
-                                    className="px-6 py-2 bg-white text-green-700 rounded-lg font-medium hover:shadow-lg transition-all"
+                                    disabled={!isLoaded || !!audioError}
+                                    className={`px-6 py-2 bg-white text-green-700 rounded-lg font-medium transition-all ${
+                                        !isLoaded || audioError ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg'
+                                    }`}
                                 >
-                                    ▶ Start Audio
+                                    {isLoaded ? '▶ Start Audio' : 'Loading Audio...'}
                                 </button>
                             )
                         ) : listeningPhase === 'review' ? (
@@ -180,9 +195,9 @@ export default function ListeningInterface() {
             <div className="flex-1 overflow-y-auto p-6">
                 <div className="mb-4 pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                     <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                        Part {currentPart.partNumber}
+                        Part {currentPart.partNumber || currentPartIndex + 1}
                     </span>
-                    <h2 className="text-xl font-bold mt-2">{currentPart.title.split(':')[1] || currentPart.title}</h2>
+                    <h2 className="text-xl font-bold mt-2">{currentPartTitle.split(':')[1] || currentPartTitle}</h2>
                 </div>
 
                 {/* Transcript (for review/after exam) */}
@@ -201,7 +216,7 @@ export default function ListeningInterface() {
 
             {/* Part tabs */}
             <div className="flex border-t" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--panel-bg)' }}>
-                {listeningData.parts.map((part, index) => (
+                {parts.map((part, index) => (
                     <button
                         key={part.id}
                         onClick={() => setCurrentPartIndex(index)}
@@ -214,7 +229,7 @@ export default function ListeningInterface() {
                         `}
                         style={{ borderColor: 'var(--border-color)' }}
                     >
-                        Part {part.partNumber}
+                        Part {part.partNumber || index + 1}
                     </button>
                 ))}
             </div>
@@ -225,13 +240,24 @@ export default function ListeningInterface() {
     const renderQuestionBlock = (questionBlock, blockIndex) => {
         switch (questionBlock.type) {
             case 'TrueFalse':
+                if (!Array.isArray(questionBlock.items) || questionBlock.items.length === 0) {
+                    return null;
+                }
                 return (
                     <div key={blockIndex} className="space-y-6">
                         <div className="mb-4 pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                             <h2 className="text-xl font-bold" style={{ color: 'var(--text-color)' }}>{questionBlock.heading}</h2>
                             <p className="mt-2 text-sm" style={{ color: 'var(--text-color)', opacity: 0.7 }}>{questionBlock.instruction}</p>
                         </div>
-                        {questionBlock.items.map((q) => (
+                        {questionBlock.items.map((q, itemIndex) => {
+                            const base = Number(questionBlock.startId ?? questionBlock.startNumber);
+                            const itemNumber = Number(q.id);
+                            const displayNumber = Number.isFinite(itemNumber)
+                                ? itemNumber
+                                : Number.isFinite(base)
+                                    ? base + itemIndex
+                                    : q.id;
+                            return (
                             <div
                                 key={q.id}
                                 className="rounded-xl shadow-sm border p-5 transition-all hover:shadow-md mb-4"
@@ -239,7 +265,7 @@ export default function ListeningInterface() {
                             >
                                 <div className="flex gap-4">
                                     <span className="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                                        {q.id}
+                                        {displayNumber}
                                     </span>
                                     <div className="flex-1">
                                         <p className="font-medium mb-4" style={{ color: 'var(--text-color)' }}>{q.text}</p>
@@ -275,18 +301,30 @@ export default function ListeningInterface() {
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        );
+                        })}
                     </div>
                 );
 
             case 'MCQ':
+                if (!Array.isArray(questionBlock.items) || questionBlock.items.length === 0) {
+                    return null;
+                }
                 return (
                     <div key={blockIndex} className="space-y-6 mt-10 pt-6 border-t-2" style={{ borderColor: 'var(--border-color)' }}>
                         <div className="mb-4 pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                             <h2 className="text-xl font-bold" style={{ color: 'var(--text-color)' }}>{questionBlock.heading}</h2>
                             <p className="mt-2 text-sm" style={{ color: 'var(--text-color)', opacity: 0.7 }}>{questionBlock.instruction}</p>
                         </div>
-                        {questionBlock.items.map((q) => (
+                        {questionBlock.items.map((q, itemIndex) => {
+                            const base = Number(questionBlock.startId ?? questionBlock.startNumber);
+                            const itemNumber = Number(q.id);
+                            const displayNumber = Number.isFinite(itemNumber)
+                                ? itemNumber
+                                : Number.isFinite(base)
+                                    ? base + itemIndex
+                                    : q.id;
+                            return (
                             <div
                                 key={q.id}
                                 className="rounded-xl shadow-sm border p-5 transition-all hover:shadow-md mb-4"
@@ -294,7 +332,7 @@ export default function ListeningInterface() {
                             >
                                 <div className="flex gap-4">
                                     <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                                        {q.id}
+                                        {displayNumber}
                                     </span>
                                     <div className="flex-1">
                                         <p className="font-medium mb-4" style={{ color: 'var(--text-color)' }}>{q.text}</p>
@@ -330,11 +368,15 @@ export default function ListeningInterface() {
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        );
+                        })}
                     </div>
                 );
 
             case 'Matching':
+                if (!questionBlock.data) {
+                    return null;
+                }
                 return (
                     <div key={blockIndex} className="mt-10 pt-6 border-t-2" style={{ borderColor: 'var(--border-color)' }}>
                         <div className="mb-6 pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
@@ -352,6 +394,9 @@ export default function ListeningInterface() {
                 );
 
             case 'GapFill':
+                if (!questionBlock.data) {
+                    return null;
+                }
                 return (
                     <div key={blockIndex} className="mt-10 pt-6 border-t-2" style={{ borderColor: 'var(--border-color)' }}>
                         <div className="mb-6 pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
@@ -369,6 +414,9 @@ export default function ListeningInterface() {
                 );
 
             case 'ShortAnswer':
+                if (!questionBlock.data) {
+                    return null;
+                }
                 return (
                     <div key={blockIndex} className="mt-10 pt-6 border-t-2" style={{ borderColor: 'var(--border-color)' }}>
                         <div className="mb-6 pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
@@ -386,6 +434,9 @@ export default function ListeningInterface() {
                 );
 
             case 'MapLabeling':
+                if (!questionBlock.data) {
+                    return null;
+                }
                 return (
                     <div key={blockIndex} className="mt-10 pt-6 border-t-2" style={{ borderColor: 'var(--border-color)' }}>
                         <div className="mb-6 pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
@@ -411,7 +462,11 @@ export default function ListeningInterface() {
     const rightPaneContent = (
         <div className="h-full overflow-y-auto transition-colors duration-300" style={{ backgroundColor: 'var(--panel-bg)' }}>
             <div className="p-6">
-                {currentPart.questions.map((block, index) => renderQuestionBlock(block, index))}
+                {partQuestions.length > 0 ? (
+                    partQuestions.map((block, index) => renderQuestionBlock(block, index))
+                ) : (
+                    <div className="text-sm text-gray-500">No questions available for this part.</div>
+                )}
                 <div className="h-8"></div>
             </div>
         </div>

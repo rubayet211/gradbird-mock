@@ -55,8 +55,9 @@ export default function AudioUploader({ value, onChange, className = "" }) {
                                 onUploadBegin={() => setIsUploading(true)}
                                 onClientUploadComplete={(res) => {
                                     setIsUploading(false);
-                                    if (res?.[0]?.ufsUrl) {
-                                        onChange(res[0].ufsUrl);
+                                    const fileUrl = res?.[0]?.url || res?.[0]?.ufsUrl;
+                                    if (fileUrl) {
+                                        onChange(fileUrl);
                                     }
                                 }}
                                 onUploadError={(error) => {
