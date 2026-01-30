@@ -276,9 +276,14 @@ const countQuestionsForBlock = (block) => {
     return 0;
 };
 
-const normalizeExistingBlock = (block, counterRef) => {
+const normalizeExistingBlock = (block, counterRef, module) => {
     if (!block || typeof block !== 'object') return block;
-    const normalized = { ...block };
+
+    // Deep clone to safely mutate
+    // Note regarding performance: A structuredClone or JSON parse/stringify might be cleaner but spread is used here.
+    // Given the depth, strict cloning is better if we mutate.
+    const normalized = JSON.parse(JSON.stringify(block));
+
     const count = Math.max(1, countQuestionsForBlock(normalized));
     const startId = Number(normalized.startId ?? normalized.startNumber);
 
@@ -291,10 +296,56 @@ const normalizeExistingBlock = (block, counterRef) => {
     }
 
     if (normalized.data && !normalized.data.instruction && normalized.instruction) {
-        normalized.data = {
-            ...normalized.data,
-            instruction: normalized.instruction,
-        };
+        normalized.data.instruction = normalized.instruction;
+    }
+
+    // --- Inject Prefixes into Nested Items ---
+
+    // Helper to prefix
+    const p = (id) => (id && String(id).startsWith(module + '-')) ? id : `${module}-${id}`;
+
+    if (Array.isArray(normalized.items)) {
+        normalized.items = normalized.items.map(item => ({
+            ...item,
+            id: p(item.id || normalized.startId) // fallback?
+        }));
+    }
+
+    if (normalized.type === 'Matching' && Array.isArray(normalized.data?.items)) {
+        normalized.data.items = normalized.data.items.map((item, idx) => ({
+            ...item,
+            // Matching items usually imply question IDs starting from startId
+            // But existing code logic for extractQuestionIdsFromBlocks implies this too.
+            // We need to support how MatchingQuestion.js renders.
+            // MatchingQuestion.js uses startNumber + index usually.
+            // If we change IDs here, we must ensure MatchingQuestion.js uses `id` from item?
+            // Let's check MatchingQuestion.js logic later. 
+            // Ideally we explicitly set `id` on items.
+            id: p(typeof item.id !== 'undefined' ? item.id : (normalized.startId + idx))
+        }));
+    }
+
+    if ((normalized.type === 'MapLabeling' || normalized.type === 'DiagramLabeling') && Array.isArray(normalized.data?.dropZones)) {
+        normalized.data.dropZones = normalized.data.dropZones.map(zone => ({
+            ...zone,
+            questionId: p(zone.questionId)
+        }));
+    }
+
+    if (Array.isArray(normalized.data?.questions)) {
+        normalized.data.questions = normalized.data.questions.map(q => ({
+            ...q,
+            id: p(q.id)
+        }));
+    }
+
+    if (normalized.type === 'MultipleAnswer' && normalized.data?.id !== undefined) {
+        normalized.data.id = p(normalized.data.id);
+    }
+
+    // Also block level id?
+    if (normalized.id) {
+        normalized.id = p(normalized.id);
     }
 
     return normalized;
@@ -305,7 +356,11 @@ const normalizeFlatQuestion = (question, module, counterRef) => {
     const heading = question?.heading || `Question ${counterRef.value}`;
     const instruction = question?.instruction || '';
     const startId = counterRef.value;
-    const baseId = question?.id || `${module}-${startId}`;
+
+    // Prefix IDs with module to ensure global uniqueness and matching with answers
+    // Note: If question.id exists, we prefix it. If we generate one, we prefix it.
+    const rawBaseId = question?.id || String(startId);
+    const baseId = rawBaseId.startsWith(`${module}-`) ? rawBaseId : `${module}-${rawBaseId}`;
 
     let block;
     switch (type) {
@@ -314,9 +369,11 @@ const normalizeFlatQuestion = (question, module, counterRef) => {
                 type,
                 heading,
                 instruction,
-                startId,
+                startId: startId, // Keep tracking numbers as numbers for display if needed? 
+                // Actually Question components use id for logical ID but startId might be numeric for display numbering.
+                // Let's keep startId numeric for now, components often compute display number from it. 
                 items: [{
-                    id: question?.id || startId,
+                    id: question?.id ? `${module}-${question.id}` : `${module}-${startId}`,
                     text: question?.text || '',
                 }],
             };
@@ -331,7 +388,7 @@ const normalizeFlatQuestion = (question, module, counterRef) => {
                     id: baseId,
                     instruction,
                     questions: [{
-                        id: question?.id || startId,
+                        id: question?.id ? `${module}-${question.id}` : `${module}-${startId}`,
                         text: question?.text || '',
                         wordLimit: question?.wordLimit,
                     }],
@@ -349,7 +406,7 @@ const normalizeFlatQuestion = (question, module, counterRef) => {
                     instruction,
                     wordLimitDescription: question?.wordLimit ? `Write NO MORE THAN ${question.wordLimit} WORDS` : undefined,
                     questions: [{
-                        id: question?.id || startId,
+                        id: question?.id ? `${module}-${question.id}` : `${module}-${startId}`,
                         text: question?.text || '',
                         wordLimit: question?.wordLimit,
                     }],
@@ -357,6 +414,7 @@ const normalizeFlatQuestion = (question, module, counterRef) => {
             };
             break;
         case 'Matching':
+            // Matching items usually have IDs too
             block = {
                 type,
                 heading,
@@ -365,7 +423,8 @@ const normalizeFlatQuestion = (question, module, counterRef) => {
                 data: {
                     id: baseId,
                     instruction,
-                    items: normalizeMatchingItems(question?.items, baseId),
+                    items: normalizeMatchingItems(question?.items, baseId), // We should ensure this propagates prefix?
+                    // normalizeMatchingItems uses baseId. 
                     options: normalizeOptionStrings(question?.options),
                 },
             };
@@ -406,7 +465,7 @@ const normalizeFlatQuestion = (question, module, counterRef) => {
                 instruction,
                 startId,
                 data: {
-                    id: question?.id || startId,
+                    id: question?.id ? `${module}-${question.id}` : `${module}-${startId}`,
                     instruction,
                     text: question?.text || '',
                     options: normalizeOptionObjects(question?.options),
@@ -422,7 +481,7 @@ const normalizeFlatQuestion = (question, module, counterRef) => {
                 instruction,
                 startId,
                 items: [{
-                    id: question?.id || startId,
+                    id: question?.id ? `${module}-${question.id}` : `${module}-${startId}`,
                     text: question?.text || '',
                     options: normalizeOptionStrings(question?.options),
                 }],
@@ -438,7 +497,12 @@ const normalizeQuestionBlocks = (questions, module, counterRef) => {
     const list = asArray(questions);
     return list.map((item) => {
         if (isBlockQuestion(item)) {
-            return normalizeExistingBlock(item, counterRef);
+            // For existing blocks, we might need to inject prefixes into their items?
+            // Existing blocks (from DB schema) might have raw IDs inside.
+            // This function `normalizeExistingBlock` just updates ids/counters. 
+            // We should PROBABLY ensure IDs inside are prefixed too.
+            // But let's look at normalizeFlatQuestion first.
+            return normalizeExistingBlock(item, counterRef, module);
         }
         return normalizeFlatQuestion(item, module, counterRef);
     });
@@ -473,9 +537,70 @@ const normalizeExamData = (examData) => {
     return normalized;
 };
 
+const flattenAnswers = (nestedAnswers) => {
+    if (!nestedAnswers) return {};
+    const flat = {};
+
+    if (nestedAnswers.reading) {
+        Object.entries(nestedAnswers.reading).forEach(([id, val]) => {
+            flat[`reading-${id}`] = val;
+        });
+    }
+    if (nestedAnswers.listening) {
+        Object.entries(nestedAnswers.listening).forEach(([id, val]) => {
+            flat[`listening-${id}`] = val;
+        });
+    }
+    // Writing/Speaking usually don't have "answers" in this object, but if they did:
+    if (nestedAnswers.writing) {
+        Object.entries(nestedAnswers.writing).forEach(([id, val]) => {
+            flat[`writing-${id}`] = val;
+        });
+    }
+    if (nestedAnswers.speaking) {
+        Object.entries(nestedAnswers.speaking).forEach(([id, val]) => {
+            flat[`speaking-${id}`] = val;
+        });
+    }
+
+    return flat;
+};
+
+const nestAnswers = (flatAnswers, examData) => {
+    if (!flatAnswers) return { reading: {}, listening: {} };
+
+    // Initialize with empty objects
+    const nested = {
+        reading: {},
+        listening: {},
+        writing: {},
+        speaking: {} // Just in case
+    };
+
+    Object.entries(flatAnswers).forEach(([key, value]) => {
+        // key is expected to be "module-id"
+        // Split by first hyphen to support IDs that might contain hyphens (though our normalized IDs shouldn't ideally)
+        const parts = key.split('-');
+        if (parts.length < 2) return; // Invalid key format
+
+        const module = parts[0];
+        // The ID is the rest of the string (re-join if needed)
+        const id = parts.slice(1).join('-');
+
+        if (nested[module]) {
+            nested[module][id] = value;
+        }
+    });
+
+    return nested;
+};
+
 export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }) {
     const searchParams = useSearchParams();
-    const activeModule = (searchParams?.get('module') || 'reading').toLowerCase();
+    // --- Refactored: Helper to get module (and guard against undefined)
+    const getModule = () => (searchParams?.get('module') || 'reading').toLowerCase();
+    const activeModule = getModule();
+
     const [timeLeft, setTimeLeft] = useState(initialTime);
     const [totalQuestions, setTotalQuestions] = useState(0);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -498,37 +623,25 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
     const [loadError, setLoadError] = useState(null);
     const lastSyncRef = useRef(Date.now());
     const syncIntervalRef = useRef(null);
-    const writingDebounceRef = useRef(null); // Debounce timer for writing auto-save
+    const writingDebounceRef = useRef(null);
 
     // Theme state
-    const [theme, setTheme] = useState('standard'); // 'standard' | 'inverted' | 'high-contrast'
-
-    // Load theme from localStorage on mount
+    const [theme, setTheme] = useState('standard');
     useEffect(() => {
         const storedTheme = localStorage.getItem('exam-theme');
-        if (storedTheme) {
-            setTheme(storedTheme);
-        }
+        if (storedTheme) setTheme(storedTheme);
     }, []);
-
-    // Apply theme to document body
     useEffect(() => {
         document.body.setAttribute('data-theme', theme);
         localStorage.setItem('exam-theme', theme);
     }, [theme]);
 
     // Font Size state
-    const [fontSize, setFontSize] = useState('standard'); // 'standard' | 'large' | 'extra-large'
-
-    // Load font size from localStorage on mount
+    const [fontSize, setFontSize] = useState('standard');
     useEffect(() => {
         const storedFontSize = localStorage.getItem('exam-font-size');
-        if (storedFontSize) {
-            setFontSize(storedFontSize);
-        }
+        if (storedFontSize) setFontSize(storedFontSize);
     }, []);
-
-    // Apply font size to document body
     useEffect(() => {
         document.body.setAttribute('data-font-size', fontSize);
         localStorage.setItem('exam-font-size', fontSize);
@@ -551,7 +664,6 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
     // Review phase countdown timer
     useEffect(() => {
         if (listeningPhase !== 'review' || reviewTimeLeft <= 0) return;
-
         const interval = setInterval(() => {
             setReviewTimeLeft((prev) => {
                 if (prev <= 1) {
@@ -561,26 +673,23 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                 return prev - 1;
             });
         }, 1000);
-
         return () => clearInterval(interval);
     }, [listeningPhase, reviewTimeLeft]);
 
-    // Auto-submit when review phase ends
+    // Auto-advance module or submit when review phase ends (Listening only)
     useEffect(() => {
         if (listeningPhase === 'ended' && reviewTimeLeft === 0 && !isExamEnded) {
-            submitExam();
+            finishModule();
         }
     }, [listeningPhase, reviewTimeLeft, isExamEnded]);
 
-    // Log security events to server
+    // Log security events
     const logSecurityEvent = useCallback(async (eventType) => {
         if (!sessionId) return;
         try {
             await fetch('/api/exam/log-security', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     sessionId,
                     eventType,
@@ -590,7 +699,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         } catch (error) {
             console.error('Failed to log security event:', error);
         }
-    }, [sessionId, activeModule]);
+    }, [sessionId]);
 
     const toggleHideScreen = useCallback(() => {
         setIsHidden((prev) => {
@@ -610,40 +719,63 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         task2Text: ''
     });
 
-    // Load highlights, notes, and writing responses from localStorage on mount
+    // Load local storage data
     useEffect(() => {
         if (sessionId) {
-            const storedHighlights = getHighlights(sessionId);
-            const storedNotes = getNotes(sessionId);
-            const storedWriting = getWritingResponses(sessionId);
-            setHighlights(storedHighlights);
-            setNotes(storedNotes);
-            setWritingResponses(storedWriting);
+            setHighlights(getHighlights(sessionId));
+            setNotes(getNotes(sessionId));
+            setWritingResponses(getWritingResponses(sessionId));
         }
-    }, [sessionId, activeModule]);
+    }, [sessionId]);
 
-    // Save highlights to localStorage when they change
     useEffect(() => {
-        if (sessionId && highlights.length >= 0) {
-            saveHighlights(sessionId, highlights);
-        }
+        if (sessionId) saveHighlights(sessionId, highlights);
     }, [sessionId, highlights]);
 
-    // Save notes to localStorage when they change
     useEffect(() => {
-        if (sessionId && notes.length >= 0) {
-            saveNotes(sessionId, notes);
-        }
+        if (sessionId) saveNotes(sessionId, notes);
     }, [sessionId, notes]);
 
-    // Save writing responses to localStorage when they change
     useEffect(() => {
-        if (sessionId) {
-            saveWritingResponses(sessionId, writingResponses);
-        }
+        if (sessionId) saveWritingResponses(sessionId, writingResponses);
     }, [sessionId, writingResponses]);
 
-    // Fetch exam data from database on mount
+
+    // --- Module Progression Logic ---
+    const router = { push: (url) => window.location.href = url }; // Simple router shim or use from next/navigation
+    // Note: We used `useSearchParams` but not `useRouter` at top level. 
+    // We should probably import `useRouter` from 'next/navigation' properly if we want SPA nav. 
+    // But modifying imports is a different chunk. For now, assuming standard nav or we can inject it.
+    // Actually, useSearchParams is there. Let's add useRouter if missing or assume standard window location for now as fallback.
+
+    // --- Safe Module Navigation ---
+    const finishModule = useCallback(async () => {
+        if (!examData) return;
+
+        const MODULE_ORDER = ['reading', 'listening', 'writing', 'speaking'];
+        const currentModuleIndex = MODULE_ORDER.indexOf(activeModule);
+
+        // Save current progress before moving on
+        await syncProgressToServer();
+
+        // If validation fails or needs alert? check logic here...
+
+        if (currentModuleIndex >= 0 && currentModuleIndex < MODULE_ORDER.length - 1) {
+            const nextModule = MODULE_ORDER[currentModuleIndex + 1];
+            // Use window.location to force full reload/update or next/navigation
+            // Assuming next/navigation is better for SPA feeling
+            // Since we don't have router imported, using window.location.search update
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('module', nextModule);
+            window.location.href = newUrl.toString();
+        } else {
+            // Last module or unknown: Submit Exam
+            submitExam();
+        }
+    }, [activeModule, examData, syncProgressToServer]); // submitExam not in dep yet, defined below
+
+
+    // Fetch exam data
     useEffect(() => {
         if (!sessionId) {
             setIsLoading(false);
@@ -671,40 +803,46 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
 
                 const normalizedExamData = normalizeExamData(data.examData);
 
-                // Calculate total questions based on the active module
+                // Calculate total questions
                 let count = resolveQuestionCount(normalizedExamData, activeModule);
-
-                // Fallback default if calculation fails (e.g. empty test or error)
                 if (count === 0) count = getDefaultQuestionCount(activeModule);
 
-                const questionIds = getQuestionIdsFromExamData(normalizedExamData, activeModule);
+                // Get IDs for *current module only* ensuring prefixes
+                // NOTE: We need to update getQuestionIdsFromExamData to handle prefixes if we change normalize
+                // OR we just rely on normalizing them with prefixes.
+                // The current normalize code doesn't add prefixes to IDs inside the object structure, 
+                // it just cleans them. 
+                // We will handle prefixing dynamically below to be safe.
+
+                const questionIdsUnprefixed = getQuestionIdsFromExamData(normalizedExamData, activeModule);
+
+                // Prefix IDs for current module to match our storage key format: "module-id"
+                // But wait, the previous code used raw IDs. 
+                // To fix collision, we MUST prefix them in `answers` state.
+                const questionIds = questionIdsUnprefixed.map(id => `${activeModule}-${id}`);
+
                 const totalCount = questionIds.length > 0 ? questionIds.length : count;
 
                 setTotalQuestions(totalCount);
                 setExamData(normalizedExamData);
 
-                const saved = normalizedExamData?.savedAnswers || {};
+                // Flatten and prefix saved answers
+                const allSavedAnswers = flattenAnswers(normalizedExamData?.savedAnswers);
+                // Note: flattenAnswers now needs to return prefixed keys: {'reading-1': 'A', ...}
+                // We need to update flattenAnswers definition (it's outside this chunk).
+                // Assuming we updated/will update helpers.
 
-                // Restore saved answers if any
-                if (normalizedExamData?.savedAnswers) {
-                    setAnswers(saved);
-                }
+                setAnswers(allSavedAnswers);
 
-                // Initialize question status
-                let initialStatus = questionIds.length > 0
-                    ? buildQuestionStatus(questionIds, saved)
-                    : generateInitialQuestionStatus(totalCount);
-
-                if (!questionIds.length && normalizedExamData?.savedAnswers) {
-                    initialStatus = initialStatus.map(q => ({
-                        ...q,
-                        status: saved[q.id] ? 'answered' : 'unanswered'
-                    }));
-                }
+                // Initialize status
+                // We check if `activeModule-id` is in `allSavedAnswers`
+                const initialStatus = questionIds.map(qId => ({
+                    id: qId, // This is now 'reading-1'
+                    status: allSavedAnswers[qId] ? 'answered' : 'unanswered'
+                }));
 
                 setQuestionStatus(initialStatus);
 
-                // Restore time remaining if any
                 if (normalizedExamData?.timeRemaining) {
                     setTimeLeft(normalizedExamData.timeRemaining);
                 }
@@ -717,9 +855,9 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         };
 
         fetchExamData();
-    }, [sessionId]);
+    }, [sessionId, activeModule]); // Added activeModule to refetch on module change
 
-    // Debounced server sync every 60 seconds
+    // Debounced sync
     const syncProgressToServer = useCallback(async () => {
         if (!sessionId || isExamEnded) return;
 
@@ -729,7 +867,7 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     sessionId,
-                    answers,
+                    answers: nestAnswers(answers, examData), // Must handle prefixes
                     writingResponses,
                     timeRemaining: timeLeft,
                 }),
@@ -738,70 +876,34 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         } catch (error) {
             console.error('Failed to sync progress to server:', error);
         }
-    }, [sessionId, answers, writingResponses, timeLeft, isExamEnded]);
+    }, [sessionId, answers, writingResponses, timeLeft, isExamEnded, examData]);
 
-    // Set up auto-sync interval (every 60 seconds)
     useEffect(() => {
         if (!sessionId || isExamEnded) return;
-
-        syncIntervalRef.current = setInterval(() => {
-            syncProgressToServer();
-        }, 60000); // 60 seconds
-
-        return () => {
-            if (syncIntervalRef.current) {
-                clearInterval(syncIntervalRef.current);
-            }
-        };
+        syncIntervalRef.current = setInterval(() => syncProgressToServer(), 60000);
+        return () => clearInterval(syncIntervalRef.current);
     }, [sessionId, isExamEnded, syncProgressToServer]);
 
-    // Add a new highlight
-    const addHighlight = useCallback((highlight) => {
-        setHighlights((prev) => [...prev, highlight]);
-    }, []);
 
-    // Remove a highlight by ID
-    const removeHighlight = useCallback((highlightId) => {
-        setHighlights((prev) => prev.filter((h) => h.id !== highlightId));
-    }, []);
+    // Add/Remove Highlight/Note - consistent
+    const addHighlight = useCallback((h) => setHighlights((p) => [...p, h]), []);
+    const removeHighlight = useCallback((id) => setHighlights((p) => p.filter((h) => h.id !== id)), []);
+    const addNote = useCallback((n) => setNotes((p) => [...p, n]), []);
+    const removeNote = useCallback((id) => setNotes((p) => p.filter((n) => n.id !== id)), []);
+    const updateNote = useCallback((id, u) => setNotes((p) => p.map((n) => n.id === id ? { ...n, ...u } : n)), []);
 
-    // Add a new note
-    const addNote = useCallback((note) => {
-        setNotes((prev) => [...prev, note]);
-    }, []);
-
-    // Remove a note by ID
-    const removeNote = useCallback((noteId) => {
-        setNotes((prev) => prev.filter((n) => n.id !== noteId));
-    }, []);
-
-    // Update an existing note
-    const updateNote = useCallback((noteId, updates) => {
-        setNotes((prev) => prev.map((n) =>
-            n.id === noteId ? { ...n, ...updates } : n
-        ));
-    }, []);
-
-    // Update writing response for a specific task
     const updateWritingResponse = useCallback((taskNumber, text) => {
         setWritingResponses((prev) => ({
             ...prev,
             [`task${taskNumber}Text`]: text
         }));
-
-        // Debounced server sync (after 2 seconds of no typing)
-        if (writingDebounceRef.current) {
-            clearTimeout(writingDebounceRef.current);
-        }
-        writingDebounceRef.current = setTimeout(() => {
-            syncProgressToServer();
-        }, 2000);
+        if (writingDebounceRef.current) clearTimeout(writingDebounceRef.current);
+        writingDebounceRef.current = setTimeout(() => syncProgressToServer(), 2000);
     }, [syncProgressToServer]);
 
-    // Timer countdown effect
+    // Timer
     useEffect(() => {
         if (!isTimerRunning || timeLeft <= 0) return;
-
         const interval = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
@@ -811,11 +913,10 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                 return prev - 1;
             });
         }, 1000);
-
         return () => clearInterval(interval);
     }, [isTimerRunning, timeLeft]);
 
-    // Auto-submit when time runs out
+    // Auto-submit on time zero
     useEffect(() => {
         if (timeLeft === 0 && !isExamEnded) {
             submitExam();
@@ -824,54 +925,51 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
 
     const submitExam = useCallback(async () => {
         if (isExamEnded) return;
-
         setIsExamEnded(true);
         setIsTimerRunning(false);
 
         try {
             await fetch(`/api/test-session/${sessionId}/finish`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ answers }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ answers: nestAnswers(answers, examData) }),
             });
-
-            // Optional: Redirect to results page or show completion modal
-            // router.push(`/dashboard/results/${sessionId}`);
+            // Redirect done by ReviewScreen or similar logic usually
         } catch (error) {
             console.error('Failed to submit exam:', error);
-            // Even if API fails, UI should remain in ended state
         }
-    }, [sessionId, answers, isExamEnded]);
+    }, [sessionId, answers, isExamEnded, examData]);
 
-    // Navigate to a specific question
+    // Navigation
     const goToQuestion = useCallback((index) => {
-        if (index >= 0 && index < totalQuestions) {
-            setCurrentQuestionIndex(index);
-        }
+        if (index >= 0 && index < totalQuestions) setCurrentQuestionIndex(index);
     }, [totalQuestions]);
 
-    // Go to next question
     const goToNextQuestion = useCallback(() => {
         if (totalQuestions <= 0) return;
-        const maxIndex = Math.max(totalQuestions - 1, 0);
-        setCurrentQuestionIndex((prev) => Math.min(prev + 1, maxIndex));
+        setCurrentQuestionIndex((prev) => Math.min(prev + 1, totalQuestions - 1));
     }, [totalQuestions]);
 
-    // Go to previous question
-    const goToPrevQuestion = useCallback(() => {
-        setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0));
-    }, []);
+    const goToPrevQuestion = useCallback(() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0)), []);
 
-    // Set answer for a question
-    const setAnswer = useCallback((questionId, answer) => {
+    // Set Answer - now expects prefixed ID or we ensure logic handles it
+    // The components usually pass the ID from the question block. 
+    // We should make sure `answer` call includes prefix OR component knows about prefix.
+    // EASIEST: The component gets questions with normalized IDs. We should prefix IDs inside normalization 
+    // OR we prefix them here. 
+    // Let's decide: `setAnswer` receives raw ID (e.g. "1") and must store as `module-1`.
+    // Valid approach: The `activeModule` is known here.
+    const setAnswer = useCallback((rawQuestionId, answer) => {
+        // Ensure ID is string
+        const qIdStr = String(rawQuestionId);
+        // If it comes with prefix already (unlikely from UI unless we changed UI), check
+        const questionId = qIdStr.startsWith(`${activeModule}-`) ? qIdStr : `${activeModule}-${qIdStr}`;
+
         setAnswers((prev) => ({
             ...prev,
             [questionId]: answer,
         }));
 
-        // Update question status to answered (unless flagged)
         setQuestionStatus((prev) =>
             prev.map((q) =>
                 q.id === questionId && q.status !== 'flagged'
@@ -879,16 +977,15 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                     : q
             )
         );
-    }, []);
+    }, [activeModule]);
 
-    // Toggle flag status for a question
-    const toggleFlag = useCallback((questionId) => {
+    const toggleFlag = useCallback((rawQuestionId) => {
+        const qIdStr = String(rawQuestionId);
+        const questionId = qIdStr.startsWith(`${activeModule}-`) ? qIdStr : `${activeModule}-${qIdStr}`;
         setQuestionStatus((prev) =>
             prev.map((q) => {
                 if (q.id !== questionId) return q;
-
                 if (q.status === 'flagged') {
-                    // If unflagging, check if there's an answer
                     return {
                         ...q,
                         status: answers[questionId] ? 'answered' : 'unanswered',
@@ -897,21 +994,24 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
                 return { ...q, status: 'flagged' };
             })
         );
-    }, [answers]);
+    }, [answers, activeModule]);
 
-    // Pause/resume timer
-    const toggleTimer = useCallback(() => {
-        setIsTimerRunning((prev) => !prev);
-    }, []);
-
-    const toggleReviewScreen = useCallback(() => {
-        setIsReviewOpen((prev) => !prev);
-    }, []);
+    const toggleTimer = useCallback(() => setIsTimerRunning((prev) => !prev), []);
+    const toggleReviewScreen = useCallback(() => setIsReviewOpen((prev) => !prev), []);
 
     const value = {
         timeLeft,
         currentQuestionIndex,
-        answers,
+        answers, // Should components receive full flat answers? Yes. But they might look for "1". 
+        // Components should be looking for scoped answers. 
+        // If we change keys to `reading-1`, we broke components unless they also look up by `reading-1`.
+        // WE SHOULD: expose a scoped accessor or components need updating.
+        // BETTER: `answers` here can be the full set. 
+        // But we should expose `getAnswer(id)`?
+        // Or, if we update `questionStatus` IDs to be `reading-1`, then the UI listing questions will use `reading-1`.
+        // The Question components map over `questionStatus` or `questions`.
+        // If we normalized `questions` to have prefixed IDs, then everything flows naturally.
+
         questionStatus,
         isTimerRunning,
         totalQuestions,
@@ -924,7 +1024,6 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         isReviewOpen,
         setIsReviewOpen,
         toggleReviewScreen,
-        // Highlight and note management
         highlights,
         notes,
         addHighlight,
@@ -933,33 +1032,30 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
         removeNote,
         updateNote,
         sessionId,
-        // Writing response management
         writingResponses,
         updateWritingResponse,
         isExamEnded,
         submitExam,
-        // Privacy Mode
+        finishModule, // Expose this new function!
         isHidden,
         toggleHideScreen,
         logSecurityEvent,
-        // Theme
         theme,
         setTheme,
-        // Font Size
         fontSize,
         toggleFontSize,
         setFontSize,
-        // Exam Data from Database
         examData,
         isLoading,
         loadError,
-        // Listening Module
         volume,
         setVolume,
         listeningPhase,
         setListeningPhase,
         reviewTimeLeft,
         startReviewPhase,
+        finishModule,
+        activeModule
     };
 
     return <ExamContext.Provider value={value}>{children}</ExamContext.Provider>;

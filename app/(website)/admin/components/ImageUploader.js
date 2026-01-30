@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { UploadButton } from "@uploadthing/react";
+import Image from 'next/image';
 
 export default function ImageUploader({
     value,
@@ -36,10 +37,11 @@ export default function ImageUploader({
                         </button>
                     </div>
                     <div className="relative aspect-video bg-gray-100 rounded overflow-hidden">
-                        <img
+                        <Image
                             src={value}
                             alt="Uploaded preview"
-                            className="w-full h-full object-contain"
+                            fill
+                            className="object-contain"
                         />
                     </div>
                     <p className="text-xs text-gray-400 mt-2 truncate">{value}</p>

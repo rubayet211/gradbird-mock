@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import ResizableSplitPane from './ResizableSplitPane';
 import { useExam } from '../contexts/ExamContext';
 import { WRITING_EXAM_DATA, getTaskByNumber } from '../data/writing-data';
@@ -49,6 +50,15 @@ export default function WritingInterface() {
     const currentTask = writingData.tasks.find(t => t.taskNumber === activeTask) || writingData.tasks[0];
     const currentText = writingResponses[`task${activeTask}Text`] || '';
 
+    // Calculate word count
+    const getWordCount = useCallback((text) => {
+        const trimmed = text.trim();
+        if (trimmed === '') return 0;
+        return trimmed.split(/\s+/).length;
+    }, []);
+
+    const wordCount = getWordCount(currentText);
+
     // Show loading state
     if (isLoading) {
         return (
@@ -73,14 +83,7 @@ export default function WritingInterface() {
         );
     }
 
-    // Calculate word count
-    const getWordCount = useCallback((text) => {
-        const trimmed = text.trim();
-        if (trimmed === '') return 0;
-        return trimmed.split(/\s+/).length;
-    }, []);
 
-    const wordCount = getWordCount(currentText);
 
     // Handle text change
     const handleTextChange = (e) => {
@@ -148,9 +151,12 @@ export default function WritingInterface() {
                     <div className="mt-6">
                         {currentTask.chartImageUrl ? (
                             <div className="rounded-xl border border-gray-200 overflow-hidden">
-                                <img
+                                <Image
                                     src={currentTask.chartImageUrl}
                                     alt={currentTask.chartDescription || 'Task chart'}
+                                    width={0}
+                                    height={0}
+                                    sizes="100vw"
                                     className="w-full h-auto"
                                 />
                                 {currentTask.chartDescription && (

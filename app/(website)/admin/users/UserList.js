@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function UserList({ initialUsers, pagination }) {
     const router = useRouter();
@@ -124,9 +125,11 @@ export default function UserList({ initialUsers, pagination }) {
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
                                             {user.image ? (
-                                                <img
+                                                <Image
                                                     src={user.image}
                                                     alt={user.name}
+                                                    width={40}
+                                                    height={40}
                                                     className="w-10 h-10 rounded-full object-cover"
                                                 />
                                             ) : (
@@ -142,8 +145,8 @@ export default function UserList({ initialUsers, pagination }) {
                                     </td>
                                     <td className="p-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
-                                                ? 'bg-purple-100 text-purple-700'
-                                                : 'bg-gray-100 text-gray-700'
+                                            ? 'bg-purple-100 text-purple-700'
+                                            : 'bg-gray-100 text-gray-700'
                                             }`}>
                                             {user.role || 'student'}
                                         </span>
@@ -185,9 +188,11 @@ export default function UserList({ initialUsers, pagination }) {
                         <div className="mb-4">
                             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                                 {editingUser.image ? (
-                                    <img
+                                    <Image
                                         src={editingUser.image}
                                         alt={editingUser.name}
+                                        width={48}
+                                        height={48}
                                         className="w-12 h-12 rounded-full object-cover"
                                     />
                                 ) : (

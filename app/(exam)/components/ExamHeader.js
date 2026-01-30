@@ -11,8 +11,8 @@ export default function ExamHeader() {
     const { timeLeft, notes, toggleHideScreen, isHidden, volume, setVolume, listeningPhase, reviewTimeLeft } = useExam();
     const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
     const searchParams = useSearchParams();
-    const module = searchParams?.get('module') || 'reading';
-    const isListeningModule = module === 'listening';
+    const examModule = searchParams?.get('module') || 'reading';
+    const isListeningModule = examModule === 'listening';
 
     return (
         <>

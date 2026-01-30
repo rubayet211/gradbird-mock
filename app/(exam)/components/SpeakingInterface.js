@@ -28,14 +28,6 @@ export default function SpeakingInterface() {
         }
     }, [speakingData]);
 
-    if (isLoading) {
-        return <div className="h-full flex items-center justify-center">Loading speaking test...</div>;
-    }
-
-    if (!speakingData) {
-        return <div className="h-full flex items-center justify-center">Error: No speaking data found.</div>;
-    }
-
     // Timer logic for Part 2 Preparation
     useEffect(() => {
         let interval;
@@ -61,6 +53,16 @@ export default function SpeakingInterface() {
         }
         return () => clearInterval(interval);
     }, [isSpeakingTimerActive, speakingTimeLeft]);
+
+    if (isLoading) {
+        return <div className="h-full flex items-center justify-center">Loading speaking test...</div>;
+    }
+
+    if (!speakingData) {
+        return <div className="h-full flex items-center justify-center">Error: No speaking data found.</div>;
+    }
+
+
 
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);

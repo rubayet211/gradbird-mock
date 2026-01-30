@@ -23,6 +23,14 @@ const TestSessionSchema = new mongoose.Schema({
     completedAt: {
         type: Date,
     },
+    // Track time remaining in seconds
+    timeRemaining: {
+        type: Number,
+    },
+    // Track when the session was last saved to calculate time drift if needed
+    lastSavedAt: {
+        type: Date,
+    },
     answers: {
         reading: { type: mongoose.Schema.Types.Mixed, default: {} },
         listening: { type: mongoose.Schema.Types.Mixed, default: {} },
