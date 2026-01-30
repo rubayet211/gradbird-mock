@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import {
     DndContext,
     DragOverlay,
@@ -236,9 +237,12 @@ export default function MapLabelingQuestion({
                                 }}
                             >
                                 {imageUrl ? (
-                                    <img
+                                    <Image
                                         src={imageUrl}
                                         alt="Map or Diagram"
+                                        width={0}
+                                        height={0}
+                                        sizes="100vw"
                                         className="w-full h-auto"
                                         onError={(e) => {
                                             e.target.style.display = 'none';

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 
 /**
  * DiagramLabeling Component
@@ -46,9 +47,12 @@ export default function DiagramLabeling({
             {/* Diagram Container */}
             <div className="relative w-full max-w-3xl mx-auto border border-gray-100 rounded-lg overflow-hidden bg-gray-50">
                 {/* Image */}
-                <img
+                <Image
                     src={imageUrl}
                     alt="Diagram to label"
+                    width={0}
+                    height={0}
+                    sizes="100vw"
                     className="w-full h-auto block"
                 />
 
