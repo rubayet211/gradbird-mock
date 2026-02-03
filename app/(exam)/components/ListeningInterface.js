@@ -50,7 +50,6 @@ export default function ListeningInterface() {
     const currentPartTitle = typeof currentPart?.title === 'string'
         ? currentPart.title
         : `Part ${currentPart.partNumber || currentPartIndex + 1}`;
-    const hasAudio = !!currentPart?.audioUrl;
 
     // Audio playback with strict controls
     const handleAudioEnded = useCallback(() => {
@@ -61,17 +60,7 @@ export default function ListeningInterface() {
         setTimeout(() => setShowReviewToast(false), 5000);
     }, [startReviewPhase]);
 
-    const {
-        isPlaying,
-        currentTime,
-        duration,
-        isLoaded,
-        error: audioError,
-        formattedCurrentTime,
-        formattedDuration,
-        progress,
-        play,
-    } = useExamAudio({
+    useExamAudio({
         audioUrl: currentPart?.audioUrl,
         volume,
         onEnded: handleAudioEnded,
@@ -100,97 +89,6 @@ export default function ListeningInterface() {
     // Left pane: Audio info and part tabs
     const leftPaneContent = (
         <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-            {/* Audio Status Panel */}
-            <div className="p-6 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                <div className="bg-gradient-to-br from-green-600 to-teal-700 rounded-2xl p-6 text-white shadow-xl">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
-                            {isPlaying ? (
-                                <svg className="w-8 h-8 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
-                                </svg>
-                            ) : (
-                                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
-                                </svg>
-                            )}
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold">IELTS Listening</h2>
-                            <p className="text-green-200 text-sm">{currentPartTitle}</p>
-                        </div>
-                    </div>
-
-                    {/* Audio Progress (Read-only, no seeking) */}
-                    <div className="mb-4">
-                        <div className="w-full h-2 bg-white/30 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-white transition-all duration-300"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-                        <div className="flex justify-between text-sm text-green-200 mt-1">
-                            <span>{formattedCurrentTime}</span>
-                            <span>{formattedDuration}</span>
-                        </div>
-                    </div>
-
-                    {/* Audio Status */}
-                    <div className="flex items-center justify-center gap-4">
-                        {listeningPhase === 'audio' ? (
-                            !hasAudio ? (
-                                <div className="text-sm text-green-200">Audio not configured</div>
-                            ) : isPlaying ? (
-                                <div className="flex items-center gap-2 text-green-200">
-                                    <div className="flex gap-1">
-                                        <span className="w-1 h-4 bg-white rounded animate-pulse"></span>
-                                        <span className="w-1 h-6 bg-white rounded animate-pulse" style={{ animationDelay: '0.1s' }}></span>
-                                        <span className="w-1 h-3 bg-white rounded animate-pulse" style={{ animationDelay: '0.2s' }}></span>
-                                        <span className="w-1 h-5 bg-white rounded animate-pulse" style={{ animationDelay: '0.3s' }}></span>
-                                    </div>
-                                    <span className="text-sm font-medium">Audio Playing...</span>
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={play}
-                                    disabled={!isLoaded || !!audioError}
-                                    className={`px-6 py-2 bg-white text-green-700 rounded-lg font-medium transition-all ${
-                                        !isLoaded || audioError ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg'
-                                    }`}
-                                >
-                                    {isLoaded ? '▶ Start Audio' : 'Loading Audio...'}
-                                </button>
-                            )
-                        ) : listeningPhase === 'review' ? (
-                            <div className="text-center">
-                                <p className="text-lg font-bold text-amber-300">Review Period</p>
-                                <p className="text-sm text-green-200">Check your answers</p>
-                            </div>
-                        ) : (
-                            <div className="text-center">
-                                <p className="text-lg font-bold text-red-300">Time's Up</p>
-                                <p className="text-sm text-green-200">Submitting answers...</p>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Audio Error */}
-                    {audioError && (
-                        <div className="mt-4 p-2 bg-red-500/20 rounded text-red-200 text-sm text-center">
-                            {audioError}
-                        </div>
-                    )}
-
-                    {/* No Audio URL Warning */}
-                    {!currentPart.audioUrl && (
-                        <div className="mt-4 p-3 bg-white/10 rounded-lg text-center">
-                            <p className="text-sm text-green-200">Audio not configured for this part.</p>
-                            <p className="text-xs text-green-300 mt-1">Use sample questions to practice.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-
             {/* Part Info / Transcript */}
             <div className="flex-1 overflow-y-auto p-6">
                 <div className="mb-4 pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>

@@ -208,7 +208,6 @@ export default function WritingInterface() {
                     className={`w-full h-full resize-none rounded-xl border-2 border-gray-200 bg-white p-5 text-gray-800 leading-relaxed text-base focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all placeholder:text-gray-400 font-[system-ui] ${isExamEnded ? 'opacity-60 cursor-not-allowed bg-gray-100' : ''}`}
                     style={{
                         fontFamily: "'Georgia', 'Times New Roman', serif",
-                        fontSize: '16px',
                         lineHeight: '1.8',
                     }}
                 />

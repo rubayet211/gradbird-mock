@@ -748,6 +748,34 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
     // But modifying imports is a different chunk. For now, assuming standard nav or we can inject it.
     // Actually, useSearchParams is there. Let's add useRouter if missing or assume standard window location for now as fallback.
 
+    // Debounced sync
+    const syncProgressToServer = useCallback(async () => {
+        if (!sessionId || isExamEnded) return;
+
+        try {
+            await fetch('/api/exam/save-progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionId,
+                    answers: nestAnswers(answers, examData), // Must handle prefixes
+                    writingResponses,
+                    timeRemaining: timeLeft,
+                }),
+            });
+            lastSyncRef.current = Date.now();
+        } catch (error) {
+            console.error('Failed to sync progress to server:', error);
+        }
+    }, [sessionId, answers, writingResponses, timeLeft, isExamEnded, examData]);
+
+    useEffect(() => {
+        if (!sessionId || isExamEnded) return;
+        syncIntervalRef.current = setInterval(() => syncProgressToServer(), 60000);
+        return () => clearInterval(syncIntervalRef.current);
+    }, [sessionId, isExamEnded, syncProgressToServer]);
+
+
     // --- Safe Module Navigation ---
     const finishModule = useCallback(async () => {
         if (!examData) return;
@@ -856,34 +884,6 @@ export function ExamProvider({ children, initialTime = INITIAL_TIME, sessionId }
 
         fetchExamData();
     }, [sessionId, activeModule]); // Added activeModule to refetch on module change
-
-    // Debounced sync
-    const syncProgressToServer = useCallback(async () => {
-        if (!sessionId || isExamEnded) return;
-
-        try {
-            await fetch('/api/exam/save-progress', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    sessionId,
-                    answers: nestAnswers(answers, examData), // Must handle prefixes
-                    writingResponses,
-                    timeRemaining: timeLeft,
-                }),
-            });
-            lastSyncRef.current = Date.now();
-        } catch (error) {
-            console.error('Failed to sync progress to server:', error);
-        }
-    }, [sessionId, answers, writingResponses, timeLeft, isExamEnded, examData]);
-
-    useEffect(() => {
-        if (!sessionId || isExamEnded) return;
-        syncIntervalRef.current = setInterval(() => syncProgressToServer(), 60000);
-        return () => clearInterval(syncIntervalRef.current);
-    }, [sessionId, isExamEnded, syncProgressToServer]);
-
 
     // Add/Remove Highlight/Note - consistent
     const addHighlight = useCallback((h) => setHighlights((p) => [...p, h]), []);

@@ -13,6 +13,7 @@ export default function ReviewScreen() {
         toggleFlag,
         submitExam,
         finishModule,
+        activeModule,
     } = useExam();
 
     if (!isReviewOpen) return null;
@@ -121,7 +122,7 @@ export default function ReviewScreen() {
                     onClick={finishModule}
                     className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-lg transform hover:-translate-y-0.5 transition-all text-lg flex items-center gap-2"
                 >
-                    <span>{useExam().activeModule === 'speaking' ? 'Submit & End Test' : 'Finish Section'}</span>
+                    <span>{activeModule === 'speaking' ? 'Submit & End Test' : 'Finish Section'}</span>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>

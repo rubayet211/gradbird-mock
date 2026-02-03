@@ -19,10 +19,12 @@ export default function ExamPage() {
             <ExamHeader />
 
             {/* Main Content Area */}
-            {module === 'reading' && <ReadingInterface />}
-            {module === 'listening' && <ListeningInterface />}
-            {module === 'writing' && <WritingInterface />}
-            {module === 'speaking' && <SpeakingInterface />}
+            <div className="flex-1 overflow-hidden exam-font-scale">
+                {module === 'reading' && <ReadingInterface />}
+                {module === 'listening' && <ListeningInterface />}
+                {module === 'writing' && <WritingInterface />}
+                {module === 'speaking' && <SpeakingInterface />}
+            </div>
 
             {/* Footer */}
             <ExamFooter />
