@@ -13,7 +13,6 @@
 
   /* Default Scale */
   --font-scale: var(--font-scale-standard);
-  font-size: calc(16px * var(--font-scale));
 }
 
 @theme inline {
@@ -73,6 +72,10 @@
 
 [data-font-size="extra-large"] {
   --font-scale: var(--font-scale-xl);
+}
+
+.exam-font-scale {
+  font-size: calc(16px * var(--font-scale));
 }
 
 body {
